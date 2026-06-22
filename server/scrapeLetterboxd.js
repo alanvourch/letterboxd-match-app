@@ -219,6 +219,13 @@ export async function scrapeProfile(username) {
   const $profile = cheerio.load(profileHtml)
   const favPosters = parsePosters($profile, '#favourites').slice(0, 4)
 
+  // Avatar (og:image = version haute résolution) + nom affiché.
+  const avatarUrl =
+    $profile('meta[property="og:image"]').attr('content') ||
+    $profile('.profile-avatar img').attr('src') ||
+    null
+  const displayName = ($profile('.profile-avatar img').attr('alt') || '').trim()
+
   // Construit la liste des films (clé d'unicité = nom+année via une Map locale).
   const films = new Map()
   const keyOf = (name, year) => `${name.toLowerCase()}__${year ?? ''}`
@@ -270,7 +277,9 @@ export async function scrapeProfile(username) {
   }
 
   return {
-    username: username.trim(),
+    username: displayName || username.trim(),
+    profileUrl: `${BASE}/${user}/`,
+    avatarUrl,
     films: [...films.values()],
     favorites,
   }

@@ -56,7 +56,13 @@ async function fetchPublicProfile(username) {
 
   const films = new Map()
   for (const f of data.films) films.set(filmKey(f.name, f.year), f)
-  return { username: data.username || name, films, favorites: data.favorites || [] }
+  return {
+    username: data.username || name,
+    profileUrl: data.profileUrl || `https://letterboxd.com/${name.toLowerCase()}/`,
+    avatarUrl: data.avatarUrl || null,
+    films,
+    favorites: data.favorites || [],
+  }
 }
 
 /**

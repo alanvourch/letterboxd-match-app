@@ -100,6 +100,10 @@ export function computeCompatibility(a, b) {
   const meanDiff = ratedPairs.length
     ? ratedPairs.reduce((s, p) => s + p.diff, 0) / ratedPairs.length
     : null
+  // Biais signé : moyenne (note A - note B). Positif => A note plus généreusement.
+  const ratingBias = ratedPairs.length
+    ? ratedPairs.reduce((s, p) => s + (p.ratingA - p.ratingB), 0) / ratedPairs.length
+    : null
 
   // --- Films adorés en commun (5★ des deux OU likés des deux) ---
   const lovedInCommon = common
@@ -136,6 +140,32 @@ export function computeCompatibility(a, b) {
   const flopA = sortByRatingAsc(ratedFilms(a)).slice(0, 10)
   const flopB = sortByRatingAsc(ratedFilms(b)).slice(0, 10)
 
+  // --- Recommandations : pépites d'un user que l'autre n'a PAS vues ---
+  // (note >= 4 OU likée). Tri par note puis like. À faire découvrir à l'autre.
+  const gemsFor = (from, otherWatched) =>
+    [...from.films.values()]
+      .filter((f) => !otherWatched.has(filmKey(f.name, f.year)))
+      .filter((f) => (f.rating != null && f.rating >= 4) || f.liked)
+      .map((f) => ({
+        uri: f.uri,
+        name: f.name,
+        year: f.year,
+        rating: f.rating,
+        liked: f.liked,
+      }))
+      .sort(
+        (x, y) =>
+          (y.rating ?? (y.liked ? 4 : 0)) - (x.rating ?? (x.liked ? 4 : 0)) ||
+          Number(y.liked) - Number(x.liked) ||
+          x.name.localeCompare(y.name),
+      )
+      .slice(0, 5)
+
+  const recommendations = {
+    aToB: gemsFor(a, watchedB), // pépites de A à faire découvrir à B
+    bToA: gemsFor(b, watchedA),
+  }
+
   // --- Favoris partagés ---
   // Match par nom+année (et non par URI) : les URIs diffèrent selon la source
   // (boxd.it pour le CSV, letterboxd.com pour le scraping).
@@ -161,8 +191,18 @@ export function computeCompatibility(a, b) {
 
   return {
     profiles: {
-      a: { username: a.username, watchedCount: watchedA.size },
-      b: { username: b.username, watchedCount: watchedB.size },
+      a: {
+        username: a.username,
+        watchedCount: watchedA.size,
+        profileUrl: a.profileUrl ?? null,
+        avatarUrl: a.avatarUrl ?? null,
+      },
+      b: {
+        username: b.username,
+        watchedCount: watchedB.size,
+        profileUrl: b.profileUrl ?? null,
+        avatarUrl: b.avatarUrl ?? null,
+      },
     },
     score,
     label: label(score),
@@ -176,11 +216,13 @@ export function computeCompatibility(a, b) {
     taste: {
       correlation,
       meanDiff,
+      ratingBias,
       sampleSize: ratedPairs.length,
       reliable: enoughRatings,
     },
     lovedInCommon,
     divisive,
+    recommendations,
     top: { a: topA, b: topB },
     flop: { a: flopA, b: flopB },
     favorites: { a: a.favorites, b: b.favorites, shared: sharedFavorites },

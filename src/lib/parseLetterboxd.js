@@ -208,13 +208,17 @@ function buildProfile(username, csvByName) {
 
   const favorites = parseFavorites(store, csvByName.profile || [])
 
-  let resolvedName = username
-  if (!resolvedName && csvByName.profile?.length) {
-    resolvedName = pick(csvByName.profile[0], 'Username', 'Given Name')
-  }
+  // Pseudo réel (handle) depuis profile.csv -> sert à construire l'URL du profil.
+  const handle = csvByName.profile?.length
+    ? pick(csvByName.profile[0], 'Username')
+    : undefined
+  // Nom affiché : pseudo saisi par l'utilisateur, sinon handle.
+  const display = username || handle || 'Utilisateur'
 
   return {
-    username: resolvedName || 'Utilisateur',
+    username: display,
+    profileUrl: handle ? `https://letterboxd.com/${handle.toLowerCase()}/` : null,
+    avatarUrl: null, // le CSV ne contient pas d'avatar
     films: store.films,
     favorites,
   }

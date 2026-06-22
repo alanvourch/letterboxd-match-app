@@ -82,7 +82,10 @@ console.log('Score             :', res.score, '·', res.label.title)
 console.log('Films communs     :', res.overlap.common, '· Jaccard', res.overlap.jaccard.toFixed(2))
 console.log('Corrélation       :', res.taste.correlation?.toFixed(3), 'sur', res.taste.sampleSize)
 console.log('Écart moyen       :', res.taste.meanDiff?.toFixed(2))
+console.log('Biais signé (A-B) :', res.taste.ratingBias?.toFixed(2))
 console.log('Clivants (top 3)  :', res.divisive.slice(0, 3).map((f) => `${f.name} Δ${f.diff}`))
+console.log('Reco A→B (top 3)  :', res.recommendations.aToB.slice(0, 3).map((f) => `${f.name} ${f.rating ?? ''}★${f.liked ? '♥' : ''}`))
+console.log('Reco B→A (top 3)  :', res.recommendations.bToA.slice(0, 3).map((f) => `${f.name} ${f.rating ?? ''}★${f.liked ? '♥' : ''}`))
 
 // --- Assertions ---
 let ok = true

@@ -31,6 +31,14 @@ export function correlationLabel(r) {
   return 'goûts opposés'
 }
 
+// Phrase expliquant qui note le plus généreusement (biais signé A - B).
+export function biasText(bias, nameA, nameB) {
+  if (bias == null) return null
+  if (Math.abs(bias) < 0.1) return 'Vous notez avec la même générosité.'
+  const [higher, lower] = bias > 0 ? [nameA, nameB] : [nameB, nameA]
+  return `${higher} note en moyenne ${Math.abs(bias).toFixed(1)}★ plus haut que ${lower}.`
+}
+
 export const toneClasses = {
   green: 'text-lb-green',
   blue: 'text-lb-blue',

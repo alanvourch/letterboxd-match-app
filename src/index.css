@@ -15,3 +15,13 @@ body {
     radial-gradient(circle at 90% 10%, rgba(0, 224, 84, 0.06), transparent 35%);
   background-attachment: fixed;
 }
+
+/* Barre de progression indéterminée (va-et-vient) */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}

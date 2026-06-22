@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import UploadStep from './components/UploadStep.jsx'
 import ResultsDashboard from './components/ResultsDashboard.jsx'
+import LoadingOverlay from './components/LoadingOverlay.jsx'
 import { loadProfile, detectSource } from './lib/loadProfile.js'
 import { computeCompatibility } from './lib/compatibility.js'
 
 export default function App() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [scraping, setScraping] = useState(false)
   const [error, setError] = useState(null)
 
   // Transforme l'état d'un côté de l'UI en `source` pour loadProfile.
@@ -19,6 +21,7 @@ export default function App() {
 
   async function handleCompare(sideA, sideB) {
     setLoading(true)
+    setScraping(sideA.mode === 'public' || sideB.mode === 'public')
     setError(null)
     try {
       const [profileA, profileB] = await Promise.all([
@@ -42,6 +45,7 @@ export default function App() {
 
   return (
     <div className="min-h-full">
+      {loading && <LoadingOverlay scraping={scraping} />}
       {result ? (
         <ResultsDashboard result={result} onReset={handleReset} />
       ) : (

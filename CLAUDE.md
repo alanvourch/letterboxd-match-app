@@ -42,11 +42,15 @@ Data flows in one direction through these layers:
 
 ```
 Profile = {
-  username,
-  films: Map<uri, { uri, name, year, rating|null, watched, liked, isFavorite }>,
+  username,                          // display name (avatar img alt for scrape, profile.csv Username for CSV)
+  profileUrl,                        // letterboxd.com/<handle>/ or null (CSV without profile.csv)
+  avatarUrl,                         // scrape only (og:image); null for CSV
+  films: Map<key, { uri, name, year, rating|null, watched, liked, isFavorite }>,  // key = filmKey(name, year)
   favorites: [{ uri, name, year }]   // up to 4
 }
 ```
+
+`computeCompatibility` also returns `recommendations` (each side's gems — rating≥4 or liked — the other hasn't watched, top 5) and `taste.ratingBias` (signed mean of `ratingA - ratingB`; positive ⇒ A rates more generously). `result.profiles.{a,b}` carry `username`/`profileUrl`/`avatarUrl` for the clickable `ProfileBadge` in `ScoreHero`.
 
 A film counts as "watched" if `watched || rating != null || liked` (see `isWatched` in compatibility.js).
 
