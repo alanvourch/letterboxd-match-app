@@ -60,3 +60,17 @@ export function Rating({ value }) {
     </span>
   )
 }
+
+// Meta réutilisable : cœur si liké + note. Pour les listes de coups de cœur.
+export function ratingMeta(film) {
+  return (
+    <span className="flex items-center gap-1.5">
+      {film.liked && (
+        <span className="text-lb-orange" title="Liké">
+          ♥
+        </span>
+      )}
+      <Rating value={film.rating} />
+    </span>
+  )
+}

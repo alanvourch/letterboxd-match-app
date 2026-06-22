@@ -4,6 +4,7 @@ import SectionLovedDivisive from './SectionLovedDivisive.jsx'
 import RecommendationsSection from './RecommendationsSection.jsx'
 import TopFlopCompare from './TopFlopCompare.jsx'
 import FavoritesCompare from './FavoritesCompare.jsx'
+import { ratingMeta } from './FilmList.jsx'
 import { pct, correlationLabel, biasText } from '../lib/format.js'
 
 export default function ResultsDashboard({ result, onReset }) {
@@ -16,7 +17,7 @@ export default function ResultsDashboard({ result, onReset }) {
     lovedInCommon,
     divisive,
     recommendations,
-    top,
+    recentLoved,
     flop,
     favorites,
   } = result
@@ -51,9 +52,17 @@ export default function ResultsDashboard({ result, onReset }) {
         <StatCard
           value={pct(overlap.jaccard)}
           label="Taux de recoupement"
-          hint={`${pct(overlap.pctOfA)} de ${nameA} · ${pct(overlap.pctOfB)} de ${nameB}`}
+          hint={
+            <>
+              {nameA} a vu <span className="text-white">{pct(overlap.pctOfB)}</span> des
+              films de {nameB}
+              <br />
+              {nameB} a vu <span className="text-white">{pct(overlap.pctOfA)}</span> des
+              films de {nameA}
+            </>
+          }
           tone="text-lb-blue"
-          info="Part de films communs parmi tous les films vus par l'un OU l'autre. 100% = vous avez vu exactement les mêmes films ; 10% = peu de chevauchement."
+          info="Le grand chiffre = part de films communs parmi tous les films vus par l'un OU l'autre (100% = exactement la même liste). En dessous, le détail dans chaque sens : qui a vu quelle part du catalogue de l'autre."
         />
         <StatCard
           value={corrValue}
@@ -118,12 +127,13 @@ export default function ResultsDashboard({ result, onReset }) {
       <FavoritesCompare favorites={favorites} nameA={nameA} nameB={nameB} />
 
       <TopFlopCompare
-        title="⭐ Top 10"
-        subtitle="Films les mieux notés de chacun"
-        a={top.a}
-        b={top.b}
+        title="❤️ Derniers coups de cœur"
+        subtitle="Films récemment adorés (4.5★+) ou likés par chacun"
+        a={recentLoved.a}
+        b={recentLoved.b}
         nameA={nameA}
         nameB={nameB}
+        renderMeta={ratingMeta}
       />
 
       <TopFlopCompare

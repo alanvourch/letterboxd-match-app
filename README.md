@@ -2,10 +2,12 @@
 
 Web-app qui compare deux profils Letterboxd et calcule un **score de compatibilité cinéphile**. Deux façons de fournir un profil :
 
+- **Pseudo public** (par défaut) : on tape un pseudo — avec **autocomplétion** (API officielle de recherche Letterboxd) — et l'app lit les pages publiques du profil via un petit service local.
 - **Export CSV** déposé dans l'app (analysé 100 % côté navigateur, données privées).
-- **Pseudo public** : l'app lit les pages publiques du profil via un petit service local (Letterboxd n'a pas d'API).
 
 On peut mélanger les deux (ex. ton CSV contre le pseudo public d'un ami).
+
+Le résultat affiche : score + avatars cliquables, taux de recoupement, corrélation des notes, coups de cœur communs / films clivants, recommandations croisées, derniers coups de cœur, favoris (avec affiches) et flop de chacun.
 
 ## Lancer le projet
 
@@ -48,7 +50,8 @@ src/lib/
 src/components/        UI React (upload + dashboard de résultats)
 server/
   scrapeLetterboxd.js  scraping d'un profil public -> même format Profile
-  index.js             API Express (/api/profile/:username) + cache
+  searchMembers.js     autocomplétion via l'API officielle Letterboxd
+  index.js             API Express (/api/profile/:username, /api/search/:query) + cache
 ```
 
 `loadProfile(source)` renvoie toujours le même format `Profile` quelle que soit la source ; le moteur et l'UI ignorent l'origine des données. CSV et scraping s'alignent grâce à `filmKey` (nom + année).

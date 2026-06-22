@@ -55,7 +55,7 @@ console.log('\n=== Self-compare (sanity check) ===')
 console.log('Score             :', self.score, '·', self.label.title)
 console.log('Films communs     :', self.overlap.common, '/', self.overlap.union)
 console.log('Corrélation       :', self.taste.correlation?.toFixed(3), '(attendu ~1)')
-console.log('Top 3             :', self.top.a.slice(0, 3).map((f) => `${f.name} ${f.rating}★`))
+console.log('Derniers coups de cœur (3):', self.recentLoved.a.slice(0, 3).map((f) => `${f.name} ${f.rating ?? ''}★${f.liked ? '♥' : ''}`))
 
 // --- Variante modifiée : on bruite les notes d'une copie pour un vrai % ---
 function tweak(profile, fn) {

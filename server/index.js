@@ -1,5 +1,6 @@
 import express from 'express'
 import { scrapeProfile } from './scrapeLetterboxd.js'
+import { searchMembers } from './searchMembers.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -29,6 +30,14 @@ app.get('/api/profile/:username', async (req, res) => {
           ? 400
           : 502
     res.status(status).json({ error: err.message, code: err.code || 'SCRAPE_ERROR' })
+  }
+})
+
+app.get('/api/search/:query', async (req, res) => {
+  try {
+    res.json({ results: await searchMembers(req.params.query) })
+  } catch {
+    res.json({ results: [] })
   }
 })
 

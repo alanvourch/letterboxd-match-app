@@ -48,12 +48,6 @@ function label(score) {
   return { title: 'Opposés qui s’attirent', tone: 'orange' }
 }
 
-function sortByRatingDesc(films) {
-  return [...films].sort(
-    (a, b) => (b.rating ?? -1) - (a.rating ?? -1) || a.name.localeCompare(b.name),
-  )
-}
-
 function sortByRatingAsc(films) {
   return [...films].sort(
     (a, b) => (a.rating ?? 99) - (b.rating ?? 99) || a.name.localeCompare(b.name),
@@ -131,12 +125,24 @@ export function computeCompatibility(a, b) {
     .filter((p) => p.diff >= DIVISIVE_THRESHOLD)
     .sort((x, y) => y.diff - x.diff)
 
-  // --- Top / Flop de chacun ---
+  // --- Derniers coups de cœur (récents) + Flop de chacun ---
   const ratedFilms = (profile) =>
     [...profile.films.values()].filter((f) => f.rating != null)
 
-  const topA = sortByRatingDesc(ratedFilms(a)).slice(0, 10)
-  const topB = sortByRatingDesc(ratedFilms(b)).slice(0, 10)
+  // Films adorés (4.5★+ ou likés), du plus récent au plus ancien.
+  // Récence : via `date` (CSV) si dispo, sinon ordre d'insertion (le scraping
+  // alimente déjà la Map par date de visionnage décroissante).
+  const recentLoved = (profile) => {
+    const loved = [...profile.films.values()].filter(
+      (f) => (f.rating != null && f.rating >= LOVED_THRESHOLD) || f.liked,
+    )
+    const hasDates = loved.some((f) => f.date)
+    const ordered = hasDates
+      ? [...loved].sort((x, y) => (y.date || '').localeCompare(x.date || ''))
+      : loved
+    return ordered.slice(0, 10)
+  }
+
   const flopA = sortByRatingAsc(ratedFilms(a)).slice(0, 10)
   const flopB = sortByRatingAsc(ratedFilms(b)).slice(0, 10)
 
@@ -223,7 +229,7 @@ export function computeCompatibility(a, b) {
     lovedInCommon,
     divisive,
     recommendations,
-    top: { a: topA, b: topB },
+    recentLoved: { a: recentLoved(a), b: recentLoved(b) },
     flop: { a: flopA, b: flopB },
     favorites: { a: a.favorites, b: b.favorites, shared: sharedFavorites },
   }

@@ -1,4 +1,5 @@
 import { filmTitle } from '../lib/format.js'
+import { filmKey } from '../lib/filmKey.js'
 
 const LB_BASE = 'https://letterboxd.com'
 const filmUrl = (f) => (!f.uri ? null : f.uri.startsWith('http') ? f.uri : LB_BASE + f.uri)
@@ -7,18 +8,38 @@ function FavCard({ film, shared }) {
   const url = filmUrl(film)
   const inner = (
     <div
-      className={`rounded-lg border p-3 text-sm ${
+      className={`overflow-hidden rounded-lg border text-sm transition ${
         shared
-          ? 'border-lb-orange/60 bg-lb-orange/10 text-white'
-          : 'border-lb-border bg-black/20'
+          ? 'border-lb-orange/70 ring-1 ring-lb-orange/40'
+          : 'border-lb-border'
       }`}
     >
-      {filmTitle(film)}
-      {shared && <span className="ml-1 text-lb-orange">★</span>}
+      {film.posterUrl ? (
+        <img
+          src={film.posterUrl}
+          alt={filmTitle(film)}
+          className="aspect-[2/3] w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex aspect-[2/3] w-full items-center justify-center bg-black/30 p-2 text-center text-xs text-lb-text">
+          {filmTitle(film)}
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-1 bg-lb-card px-2 py-1 text-xs">
+        <span className="truncate">{film.name}</span>
+        {shared && <span className="shrink-0 text-lb-orange" title="Favori commun">★</span>}
+      </div>
     </div>
   )
   return url ? (
-    <a href={url} target="_blank" rel="noreferrer" className="block hover:opacity-80">
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="block hover:opacity-80"
+      title={filmTitle(film)}
+    >
       {inner}
     </a>
   ) : (
@@ -27,7 +48,9 @@ function FavCard({ film, shared }) {
 }
 
 export default function FavoritesCompare({ favorites, nameA, nameB }) {
-  const sharedUris = new Set(favorites.shared.map((f) => f.uri))
+  // Détection par nom+année (les URIs diffèrent selon la source).
+  const sharedKeys = new Set(favorites.shared.map((f) => filmKey(f.name, f.year)))
+  const isShared = (f) => sharedKeys.has(filmKey(f.name, f.year))
   const hasAny = favorites.a.length || favorites.b.length
 
   return (
@@ -52,17 +75,17 @@ export default function FavoritesCompare({ favorites, nameA, nameB }) {
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <h4 className="mb-2 text-sm font-semibold text-lb-green">{nameA}</h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {favorites.a.map((f, i) => (
-                <FavCard key={f.uri || i} film={f} shared={sharedUris.has(f.uri)} />
+                <FavCard key={f.uri || i} film={f} shared={isShared(f)} />
               ))}
             </div>
           </div>
           <div>
             <h4 className="mb-2 text-sm font-semibold text-lb-blue">{nameB}</h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {favorites.b.map((f, i) => (
-                <FavCard key={f.uri || i} film={f} shared={sharedUris.has(f.uri)} />
+                <FavCard key={f.uri || i} film={f} shared={isShared(f)} />
               ))}
             </div>
           </div>

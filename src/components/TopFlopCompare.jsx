@@ -1,7 +1,7 @@
 import FilmList from './FilmList.jsx'
 
-// Affiche le top OU le flop des deux users côte à côte.
-export default function TopFlopCompare({ title, subtitle, a, b, nameA, nameB }) {
+// Affiche deux listes de films des deux users côte à côte (coups de cœur, flop…).
+export default function TopFlopCompare({ title, subtitle, a, b, nameA, nameB, renderMeta }) {
   return (
     <section className="rounded-xl border border-lb-border bg-lb-card/70 p-4">
       <h3 className="text-lg font-bold text-white">{title}</h3>
@@ -11,13 +11,13 @@ export default function TopFlopCompare({ title, subtitle, a, b, nameA, nameB }) 
           <h4 className="mb-2 border-b border-lb-border pb-1 text-sm font-semibold text-lb-green">
             {nameA}
           </h4>
-          <FilmList rows={a} emptyText="Aucune note." />
+          <FilmList rows={a} renderMeta={renderMeta} emptyText="Aucune note." />
         </div>
         <div>
           <h4 className="mb-2 border-b border-lb-border pb-1 text-sm font-semibold text-lb-blue">
             {nameB}
           </h4>
-          <FilmList rows={b} emptyText="Aucune note." />
+          <FilmList rows={b} renderMeta={renderMeta} emptyText="Aucune note." />
         </div>
       </div>
     </section>

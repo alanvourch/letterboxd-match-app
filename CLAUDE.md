@@ -45,12 +45,14 @@ Profile = {
   username,                          // display name (avatar img alt for scrape, profile.csv Username for CSV)
   profileUrl,                        // letterboxd.com/<handle>/ or null (CSV without profile.csv)
   avatarUrl,                         // scrape only (og:image); null for CSV
-  films: Map<key, { uri, name, year, rating|null, watched, liked, isFavorite }>,  // key = filmKey(name, year)
-  favorites: [{ uri, name, year }]   // up to 4
+  films: Map<key, { uri, name, year, rating|null, watched, liked, isFavorite, date }>,  // key = filmKey(name, year)
+  favorites: [{ uri, name, year, posterUrl }]   // up to 4; posterUrl scrape-only
 }
 ```
 
-`computeCompatibility` also returns `recommendations` (each side's gems — rating≥4 or liked — the other hasn't watched, top 5) and `taste.ratingBias` (signed mean of `ratingA - ratingB`; positive ⇒ A rates more generously). `result.profiles.{a,b}` carry `username`/`profileUrl`/`avatarUrl` for the clickable `ProfileBadge` in `ScoreHero`.
+`film.date` = most recent activity date (ISO). CSV fills it from the various `Date`/`Watched Date` columns; scrape leaves it null but inserts films in watch-date order (it scrapes `/films/by/date/`), so Map insertion order = recency. `computeCompatibility` uses this for `recentLoved` (recent 4.5★+/liked films — sort by `date` if present, else keep insertion order). It also returns `recommendations` (each side's gems — rating≥4 or liked — the other hasn't watched, top 5) and `taste.ratingBias` (signed mean of `ratingA - ratingB`; positive ⇒ A rates more generously). `result.profiles.{a,b}` carry `username`/`profileUrl`/`avatarUrl` for the clickable `ProfileBadge` in `ScoreHero`.
+
+**Member search** (`server/searchMembers.js`, `GET /api/search/:query`) uses Letterboxd's official `api.letterboxd.com/api/v0/search` — it answers member queries WITHOUT auth (the rest of that API needs a key). Used only for the autocomplete in the public-profile input. Favorite posters are fetched **early** in `scrapeProfile` (right after the profile page, before the heavy pagination) because the IP gets rate-limited after ~40 page requests; they're cosmetic so failure is tolerated (single attempt, no retry).
 
 A film counts as "watched" if `watched || rating != null || liked` (see `isWatched` in compatibility.js).
 

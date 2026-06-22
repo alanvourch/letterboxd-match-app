@@ -209,22 +209,36 @@ export async function scrapeProfile(username) {
     throw err
   }
 
-  // Séquentiel entre sections pour ne pas multiplier les rafales (rate-limit).
+  // 1) Page profil : favoris + avatar + nom affiché.
   const profileHtml = await fetchHtml(`/${user}/`)
-  const filmsData = await scrapePaginated(`/${user}/films/`, { withRatings: true })
-  const likesData = await scrapePaginated(`/${user}/likes/films/`).catch(() => ({
-    posters: [],
-  }))
-
   const $profile = cheerio.load(profileHtml)
   const favPosters = parsePosters($profile, '#favourites').slice(0, 4)
-
-  // Avatar (og:image = version haute résolution) + nom affiché.
   const avatarUrl =
     $profile('meta[property="og:image"]').attr('content') ||
     $profile('.profile-avatar img').attr('src') ||
     null
   const displayName = ($profile('.profile-avatar img').attr('alt') || '').trim()
+
+  // 2) Posters des favoris MAINTENANT (IP encore "fraîche", avant la pagination
+  //    lourde qui déclenche le rate-limit). Cosmétique -> échec toléré.
+  await mapLimit(favPosters, CONCURRENCY, async (p) => {
+    if (!p.uri) return
+    try {
+      const { status, body } = await curlOnce(p.uri)
+      if (status >= 200 && status < 300) {
+        p.posterUrl =
+          cheerio.load(body)('meta[property="og:image"]').attr('content') || null
+      }
+    } catch {
+      /* poster optionnel */
+    }
+  })
+
+  // 3) Films (triés par date de visionnage -> récence) + likes.
+  const filmsData = await scrapePaginated(`/${user}/films/by/date/`, { withRatings: true })
+  const likesData = await scrapePaginated(`/${user}/likes/films/`).catch(() => ({
+    posters: [],
+  }))
 
   // Construit la liste des films (clé d'unicité = nom+année via une Map locale).
   const films = new Map()
@@ -265,7 +279,7 @@ export async function scrapeProfile(username) {
     const k = keyOf(p.name, p.year)
     const f = films.get(k)
     if (f) f.isFavorite = true
-    return { uri: p.uri, name: p.name, year: p.year }
+    return { uri: p.uri, name: p.name, year: p.year, posterUrl: p.posterUrl ?? null }
   })
 
   if (films.size === 0) {

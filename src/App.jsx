@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Header from './components/Header.jsx'
 import UploadStep from './components/UploadStep.jsx'
 import ResultsDashboard from './components/ResultsDashboard.jsx'
 import LoadingOverlay from './components/LoadingOverlay.jsx'
@@ -46,6 +47,7 @@ export default function App() {
   return (
     <div className="min-h-full">
       {loading && <LoadingOverlay scraping={scraping} />}
+      <Header onHome={handleReset} />
       {result ? (
         <ResultsDashboard result={result} onReset={handleReset} />
       ) : (

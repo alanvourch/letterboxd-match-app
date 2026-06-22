@@ -62,6 +62,7 @@ function ensureFilm(store, name, year, uri, isFilmUri) {
       watched: false,
       liked: false,
       isFavorite: false,
+      date: null, // date d'activité la plus récente (ISO) -> "derniers coups de cœur"
     }
     store.films.set(key, film)
   }
@@ -70,6 +71,12 @@ function ensureFilm(store, name, year, uri, isFilmUri) {
     store.uriIndex.set(uri, film)
   }
   return film
+}
+
+// Garde la date la plus récente (les dates ISO "YYYY-MM-DD" se comparent en texte).
+function touchDate(film, dateStr) {
+  if (!film || !dateStr) return
+  if (!film.date || dateStr > film.date) film.date = dateStr
 }
 
 function ingestWatched(store, rows) {
@@ -81,7 +88,10 @@ function ingestWatched(store, rows) {
       pick(row, 'Letterboxd URI'),
       true,
     )
-    if (film) film.watched = true
+    if (film) {
+      film.watched = true
+      touchDate(film, pick(row, 'Date'))
+    }
   }
 }
 
@@ -96,6 +106,7 @@ function ingestRatings(store, rows) {
     )
     if (!film) continue
     film.watched = true
+    touchDate(film, pick(row, 'Date'))
     const rating = parseRating(pick(row, 'Rating'))
     if (rating != null) film.rating = rating
   }
@@ -110,7 +121,10 @@ function ingestLikes(store, rows) {
       pick(row, 'Letterboxd URI'),
       true,
     )
-    if (film) film.liked = true
+    if (film) {
+      film.liked = true
+      touchDate(film, pick(row, 'Date'))
+    }
   }
 }
 
@@ -127,6 +141,8 @@ function ingestDiary(store, rows) {
     )
     if (!film) continue
     film.watched = true
+    // "Watched Date" reflète la date de visionnage ; sinon la date d'entrée.
+    touchDate(film, pick(row, 'Watched Date') || pick(row, 'Date'))
     if (film.rating == null) {
       const rating = parseRating(pick(row, 'Rating'))
       if (rating != null) film.rating = rating
