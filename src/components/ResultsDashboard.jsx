@@ -72,11 +72,17 @@ export default function ResultsDashboard({ result, onReset }) {
           info="De −1 à +1 : notez-vous les films dans le même sens ? +1 = goûts identiques, 0 = aucun lien, −1 = opposés. Ex. +0.34 = tendance positive modérée (quand l'un aime, l'autre aime souvent aussi)."
         />
         <StatCard
-          value={taste.meanDiff == null ? '—' : taste.meanDiff.toFixed(2)}
-          label="Écart moyen de notes"
-          hint={`sur ${taste.sampleSize} film${taste.sampleSize > 1 ? 's' : ''} notés`}
+          value={
+            taste.ratingBias == null
+              ? '—'
+              : Math.abs(taste.ratingBias) < 0.1
+                ? '≈'
+                : `${taste.ratingBias > 0 ? '+' : '−'}${Math.abs(taste.ratingBias).toFixed(1)}★`
+          }
+          label="Générosité des notes"
+          hint={bias || `sur ${taste.sampleSize} film${taste.sampleSize > 1 ? 's' : ''} notés`}
           tone="text-lb-orange"
-          info="Différence moyenne entre vos notes sur les films notés par vous deux (en étoiles). Toujours positif : c'est une distance. 0.3 = très proches, 1+ = vous divergez souvent."
+          info={`Qui note le plus haut, en moyenne, sur les ${taste.sampleSize} films notés par les deux. "+0.4★" signifie que ${nameA} met en moyenne 0,4 étoile de plus que ${nameB}.`}
         />
       </div>
 
@@ -98,8 +104,8 @@ export default function ResultsDashboard({ result, onReset }) {
             très alignés ; en négatif, vos avis s'opposent.
           </li>
           <li>
-            <span className="font-semibold text-lb-orange">Écart moyen</span> : toujours
-            positif (c'est une distance entre vos notes).
+            <span className="font-semibold text-lb-orange">Générosité des notes</span> :
+            qui met les meilleures notes en moyenne.
             {bias && <span className="text-white"> {bias}</span>}
           </li>
           {!taste.reliable && taste.correlation != null && (

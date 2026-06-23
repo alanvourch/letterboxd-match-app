@@ -49,20 +49,29 @@ export default function SectionLovedDivisive({ loved, divisive, nameA, nameB }) 
 
       <Panel
         title="⚡ Films clivants"
-        subtitle="Vos plus gros désaccords de notes"
+        subtitle={`Vos plus gros désaccords (+/− = écart de ${nameA})`}
         empty="Vous êtes étonnamment d'accord sur tout."
         items={divisive}
-        render={(f) => (
-          <li key={f.uri} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-white/5">
-            <span className="min-w-0 flex-1 truncate">
-              <FilmLink film={f} />
-            </span>
-            <DualRating a={f.ratingA} b={f.ratingB} nameA={nameA} nameB={nameB} />
-            <span className="w-10 shrink-0 text-right text-xs font-semibold text-lb-orange">
-              Δ{f.diff.toFixed(1)}
-            </span>
-          </li>
-        )}
+        render={(f) => {
+          const signed = f.ratingA - f.ratingB // > 0 : nameA a mis plus haut
+          return (
+            <li key={f.uri} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-white/5">
+              <span className="min-w-0 flex-1 truncate">
+                <FilmLink film={f} />
+              </span>
+              <DualRating a={f.ratingA} b={f.ratingB} nameA={nameA} nameB={nameB} />
+              <span
+                className={`w-10 shrink-0 text-right text-xs font-semibold ${
+                  signed > 0 ? 'text-lb-green' : 'text-lb-blue'
+                }`}
+                title={`${nameA} note ${signed > 0 ? 'plus haut' : 'plus bas'} de ${Math.abs(signed).toFixed(1)}★`}
+              >
+                {signed > 0 ? '+' : '−'}
+                {Math.abs(signed).toFixed(1)}
+              </span>
+            </li>
+          )
+        }}
       />
     </div>
   )

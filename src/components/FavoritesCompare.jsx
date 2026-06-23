@@ -72,8 +72,8 @@ export default function FavoritesCompare({ favorites, nameA, nameB }) {
           Aucun favori trouvé (le fichier profile.csv était absent des exports).
         </p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          <div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-lb-green/30 bg-lb-green/5 p-3">
             <h4 className="mb-2 text-sm font-semibold text-lb-green">{nameA}</h4>
             <div className="grid grid-cols-4 gap-2">
               {favorites.a.map((f, i) => (
@@ -81,7 +81,7 @@ export default function FavoritesCompare({ favorites, nameA, nameB }) {
               ))}
             </div>
           </div>
-          <div>
+          <div className="rounded-xl border border-lb-blue/30 bg-lb-blue/5 p-3">
             <h4 className="mb-2 text-sm font-semibold text-lb-blue">{nameB}</h4>
             <div className="grid grid-cols-4 gap-2">
               {favorites.b.map((f, i) => (

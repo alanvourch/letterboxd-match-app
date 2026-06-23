@@ -25,10 +25,11 @@ export default function App() {
     setScraping(sideA.mode === 'public' || sideB.mode === 'public')
     setError(null)
     try {
-      const [profileA, profileB] = await Promise.all([
-        loadProfile(toSource(sideA)),
-        loadProfile(toSource(sideB)),
-      ])
+      // Séquentiel (et non Promise.all) : deux scrapes simultanés doublent le
+      // rythme des requêtes et déclenchent le rate-limit de Letterboxd, ce qui
+      // peut vider silencieusement les likes d'un des profils.
+      const profileA = await loadProfile(toSource(sideA))
+      const profileB = await loadProfile(toSource(sideB))
 
       setResult(computeCompatibility(profileA, profileB))
     } catch (e) {

@@ -133,6 +133,15 @@ function parsePosters($, scope) {
   return posters
 }
 
+// Vrai poster (format portrait 2:3) depuis le JSON-LD de la page film :
+//   "image":"https://a.ltrbxd.com/resized/.../...-0-230-0-345-crop.jpg"
+// Plus fiable que og:image (qui renvoie parfois l'image sociale / backdrop).
+function extractPoster(html) {
+  const m = html.match(/"image":"(https:\/\/a\.ltrbxd\.com\/resized\/[^"]+?\.jpg[^"]*)"/)
+  if (!m) return null
+  return m[1].replace(/\\\//g, '/')
+}
+
 // uid "film:ID" -> note, depuis les <p class="poster-viewingdata">.
 function parseRatings($) {
   const byUid = new Map()
@@ -225,10 +234,7 @@ export async function scrapeProfile(username) {
     if (!p.uri) return
     try {
       const { status, body } = await curlOnce(p.uri)
-      if (status >= 200 && status < 300) {
-        p.posterUrl =
-          cheerio.load(body)('meta[property="og:image"]').attr('content') || null
-      }
+      if (status >= 200 && status < 300) p.posterUrl = extractPoster(body)
     } catch {
       /* poster optionnel */
     }
