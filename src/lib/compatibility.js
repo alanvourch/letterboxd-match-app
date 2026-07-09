@@ -99,6 +99,22 @@ export function computeCompatibility(a, b) {
     ? ratedPairs.reduce((s, p) => s + (p.ratingA - p.ratingB), 0) / ratedPairs.length
     : null
 
+  // --- Films en commun, exposés pour l'enrichissement TMDB et les stats
+  // genres/réalisateurs (calculées côté client sur CE sous-ensemble). ---
+  const commonFilms = common.map((key) => {
+    const fa = a.films.get(key)
+    const fb = b.films.get(key)
+    return {
+      uri: fa.uri ?? fb.uri,
+      name: fa.name,
+      year: fa.year ?? fb.year,
+      ratingA: fa.rating,
+      ratingB: fb.rating,
+      likedA: fa.liked,
+      likedB: fb.liked,
+    }
+  })
+
   // --- Films adorés en commun (5★ des deux OU likés des deux) ---
   const lovedInCommon = common
     .map((key) => ({ a: a.films.get(key), b: b.films.get(key) }))
@@ -172,6 +188,38 @@ export function computeCompatibility(a, b) {
     bToA: gemsFor(b, watchedA),
   }
 
+  // --- Décennies : histogramme des films vus par décennie (année Letterboxd,
+  // aucun enrichissement nécessaire) + meilleure décennie commune. ---
+  const decadeHisto = (profile) => {
+    const byDecade = new Map()
+    let total = 0
+    for (const f of profile.films.values()) {
+      if (!isWatched(f) || f.year == null) continue
+      const d = Math.floor(f.year / 10) * 10
+      byDecade.set(d, (byDecade.get(d) || 0) + 1)
+      total++
+    }
+    return [...byDecade.entries()]
+      .map(([decade, count]) => ({ decade, count, share: total ? count / total : 0 }))
+      .sort((x, y) => x.decade - y.decade)
+  }
+
+  // Décennie où vos notes communes sont les meilleures (≥ 5 films co-notés).
+  const jointByDecade = new Map()
+  for (const f of commonFilms) {
+    if (f.ratingA == null || f.ratingB == null || f.year == null) continue
+    const d = Math.floor(f.year / 10) * 10
+    const e = jointByDecade.get(d) || { decade: d, count: 0, sum: 0 }
+    e.count++
+    e.sum += (f.ratingA + f.ratingB) / 2
+    jointByDecade.set(d, e)
+  }
+  const bestDecadeTogether =
+    [...jointByDecade.values()]
+      .filter((e) => e.count >= 5)
+      .map((e) => ({ decade: e.decade, count: e.count, mean: e.sum / e.count }))
+      .sort((x, y) => y.mean - x.mean)[0] ?? null
+
   // --- Favoris partagés ---
   // Match par nom+année (et non par URI) : les URIs diffèrent selon la source
   // (boxd.it pour le CSV, letterboxd.com pour le scraping).
@@ -228,6 +276,8 @@ export function computeCompatibility(a, b) {
     },
     lovedInCommon,
     divisive,
+    commonFilms,
+    decades: { a: decadeHisto(a), b: decadeHisto(b), bestTogether: bestDecadeTogether },
     recommendations,
     recentLoved: { a: recentLoved(a), b: recentLoved(b) },
     flop: { a: flopA, b: flopB },

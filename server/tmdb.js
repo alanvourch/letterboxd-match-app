@@ -17,28 +17,8 @@ const API = 'https://api.themoviedb.org/3'
 const CONCURRENCY = 8 // TMDB tolère ~50 req/s ; 8 en parallèle reste poli
 const CACHE_TTL = 1000 * 60 * 60 * 24 // 24 h (l'instance vit rarement si vieux)
 
-// Ids de genres TMDB (stables) -> libellés français.
-export const GENRES = {
-  28: 'Action',
-  12: 'Aventure',
-  16: 'Animation',
-  35: 'Comédie',
-  80: 'Policier',
-  99: 'Documentaire',
-  18: 'Drame',
-  10751: 'Familial',
-  14: 'Fantastique',
-  36: 'Histoire',
-  27: 'Horreur',
-  10402: 'Musique',
-  9648: 'Mystère',
-  10749: 'Romance',
-  878: 'Science-fiction',
-  10770: 'Téléfilm',
-  53: 'Thriller',
-  10752: 'Guerre',
-  37: 'Western',
-}
+// NB : le mapping id de genre -> libellé vit côté client (src/lib/tmdbGenres.js),
+// l'API ne renvoie que les genre_ids bruts.
 
 const cache = new Map() // filmKey -> { ts, data } (data.directors présent si credits déjà chargés)
 
