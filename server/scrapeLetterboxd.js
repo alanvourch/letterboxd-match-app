@@ -31,8 +31,21 @@ const MAX_PAGES = 100 // garde-fou
 const PAGE_SIZE = 72 // posters par page Letterboxd
 const CONCURRENCY = 3 // au-delà, Cloudflare rate-limit (403)
 const RETRIES = 4
+// Budget temps global d'un scrape : sur Vercel (plan Hobby, Fluid compute) une
+// fonction est tuée à maxDuration=300s. On s'arrête AVANT, avec une erreur
+// claire, plutôt que de laisser la plateforme timeouter en silence.
+const SCRAPE_BUDGET_MS = Number(process.env.SCRAPE_BUDGET_MS) || 270_000
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+function budgetError() {
+  const err = new Error(
+    'Ce profil est très volumineux : la lecture dépasse le temps autorisé. ' +
+      'Réessaie (le cache aidera) ou passe par l’import CSV pour ce profil.',
+  )
+  err.code = 'TOO_LARGE'
+  return err
+}
 
 // Letterboxd (Cloudflare) bloque l'empreinte TLS du client HTTP de Node (403),
 // alors que curl passe. On délègue donc la requête à curl, présent nativement
@@ -56,13 +69,23 @@ async function curlOnce(url) {
       { maxBuffer: 50 * 1024 * 1024 },
     ))
   } catch (e) {
-    throw new Error(`curl indisponible ou échec réseau : ${e.message}`)
+    // ENOENT = binaire curl absent du runtime (ne devrait pas arriver : vérifié
+    // présent sur Vercel/Amazon Linux, Windows 10+, macOS — mais on veut une
+    // erreur explicite côté utilisateur si ça change un jour).
+    const err = new Error(
+      e.code === 'ENOENT'
+        ? 'curl est absent de l’environnement serveur : le mode « pseudo public » est indisponible. Utilise l’import CSV.'
+        : `Échec réseau vers Letterboxd : ${e.message}`,
+    )
+    if (e.code === 'ENOENT') err.code = 'CURL_MISSING'
+    throw err
   }
   const nl = stdout.lastIndexOf('\n')
   return { status: parseInt(stdout.slice(nl + 1).trim(), 10), body: stdout.slice(0, nl) }
 }
 
-async function fetchHtml(path) {
+async function fetchHtml(path, deadline = Infinity) {
+  if (Date.now() > deadline) throw budgetError()
   const url = BASE + path
   let lastStatus
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
@@ -78,12 +101,15 @@ async function fetchHtml(path) {
 
     // 403 / 429 = rate-limit Cloudflare -> backoff exponentiel puis retry.
     if ((status === 403 || status === 429) && attempt < RETRIES) {
+      if (Date.now() > deadline) throw budgetError()
       await sleep(800 * 2 ** attempt) // 0.8s, 1.6s, 3.2s, 6.4s
       continue
     }
     break
   }
-  throw new Error(`Letterboxd a répondu ${lastStatus} pour ${path} (rate-limit ?)`)
+  const err = new Error(`Letterboxd a répondu ${lastStatus} pour ${path} (rate-limit ?)`)
+  if (lastStatus === 403 || lastStatus === 429) err.code = 'RATE_LIMITED'
+  throw err
 }
 
 // Exécute des tâches async avec une concurrence limitée (politesse + vitesse).
@@ -172,7 +198,7 @@ function numberedLastPage($) {
 // Scrape une section paginée. Deux styles de pagination existent :
 //   - numérotée (films) -> on lit le dernier numéro et on parallélise.
 //   - next/prev (likes)  -> on enchaîne tant qu'une page est "pleine" (72).
-async function scrapePaginated(basePath, { withRatings } = {}) {
+async function scrapePaginated(basePath, { withRatings, deadline } = {}) {
   const all = []
   const ratings = new Map()
   const ingest = ($) => {
@@ -182,21 +208,23 @@ async function scrapePaginated(basePath, { withRatings } = {}) {
     return posters.length
   }
 
-  const $first = cheerio.load(await fetchHtml(`${basePath}page/1/`))
+  const $first = cheerio.load(await fetchHtml(`${basePath}page/1/`, deadline))
   const firstCount = ingest($first)
   const numbered = numberedLastPage($first)
 
   if (numbered > 1) {
     // Chemin rapide : pages connues, fetch en parallèle (concurrence limitée).
     const rest = Array.from({ length: numbered - 1 }, (_, i) => i + 2)
-    const htmls = await mapLimit(rest, CONCURRENCY, (p) => fetchHtml(`${basePath}page/${p}/`))
+    const htmls = await mapLimit(rest, CONCURRENCY, (p) =>
+      fetchHtml(`${basePath}page/${p}/`, deadline),
+    )
     for (const html of htmls) ingest(cheerio.load(html))
   } else if (firstCount >= PAGE_SIZE) {
     // Pagination next/prev : on avance jusqu'à une page incomplète.
     let page = 2
     let count = firstCount
     while (count >= PAGE_SIZE && page <= MAX_PAGES) {
-      const $ = cheerio.load(await fetchHtml(`${basePath}page/${page}/`))
+      const $ = cheerio.load(await fetchHtml(`${basePath}page/${page}/`, deadline))
       count = ingest($)
       page++
     }
@@ -218,8 +246,10 @@ export async function scrapeProfile(username) {
     throw err
   }
 
+  const deadline = Date.now() + SCRAPE_BUDGET_MS
+
   // 1) Page profil : favoris + avatar + nom affiché.
-  const profileHtml = await fetchHtml(`/${user}/`)
+  const profileHtml = await fetchHtml(`/${user}/`, deadline)
   const $profile = cheerio.load(profileHtml)
   const favPosters = parsePosters($profile, '#favourites').slice(0, 4)
   const avatarUrl =
@@ -241,10 +271,18 @@ export async function scrapeProfile(username) {
   })
 
   // 3) Films (triés par date de visionnage -> récence) + likes.
-  const filmsData = await scrapePaginated(`/${user}/films/by/date/`, { withRatings: true })
-  const likesData = await scrapePaginated(`/${user}/likes/films/`).catch(() => ({
-    posters: [],
-  }))
+  const filmsData = await scrapePaginated(`/${user}/films/by/date/`, {
+    withRatings: true,
+    deadline,
+  })
+  const likesData = await scrapePaginated(`/${user}/likes/films/`, { deadline }).catch(
+    (e) => {
+      // Le budget temps doit remonter (résultat sinon incomplet en silence) ;
+      // les autres échecs sur les likes restent tolérés (cosmétique).
+      if (e.code === 'TOO_LARGE') throw e
+      return { posters: [] }
+    },
+  )
 
   // Construit la liste des films (clé d'unicité = nom+année via une Map locale).
   const films = new Map()
@@ -290,7 +328,7 @@ export async function scrapeProfile(username) {
 
   if (films.size === 0) {
     const err = new Error(
-      `Aucun film trouvé pour « ${username} ». Le profil est-il public et le pseudo correct ?`,
+      `Aucun film trouvé pour « ${username} ». Le profil est peut-être privé, vide, ou le pseudo incorrect.`,
     )
     err.code = 'EMPTY'
     throw err

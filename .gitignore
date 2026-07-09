@@ -3,6 +3,12 @@ dist
 .DS_Store
 *.local
 
+# Secrets & config locale (clé TMDB…) — jamais committés
+.env
+.env.*
+!.env.example
+.vercel
+
 # Exports Letterboxd personnels (données privées — ne pas committer)
 letterboxd-*/
 *.zip

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "regions": ["cdg1"],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 300
+    }
+  }
+}
