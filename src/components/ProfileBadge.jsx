@@ -1,30 +1,38 @@
 // Avatar + nom d'un profil, cliquable vers la page Letterboxd si connue.
 // Avatar absent (cas CSV sans scraping) -> pastille avec l'initiale.
-export default function ProfileBadge({ profile, accent = 'green', size = 'lg' }) {
-  const dims = size === 'lg' ? 'h-20 w-20' : 'h-12 w-12'
-  const ring = accent === 'green' ? 'ring-lb-green/60' : 'ring-lb-blue/60'
-  const textAccent = accent === 'green' ? 'text-lb-green' : 'text-lb-blue'
+export default function ProfileBadge({ profile, accent = 'green' }) {
+  const ring = accent === 'green' ? 'ring-green/70' : 'ring-blue/70'
+  const textAccent = accent === 'green' ? 'text-green' : 'text-blue'
   const initial = (profile.username || '?').trim().charAt(0).toUpperCase()
 
   const avatar = profile.avatarUrl ? (
     <img
       src={profile.avatarUrl}
-      alt={profile.username}
-      className={`${dims} rounded-full object-cover ring-2 ${ring}`}
-      loading="lazy"
+      alt={`Avatar de ${profile.username}`}
+      className={`h-16 w-16 rounded-full object-cover ring-2 sm:h-20 sm:w-20 ${ring}`}
     />
   ) : (
     <div
-      className={`${dims} flex items-center justify-center rounded-full bg-lb-card text-2xl font-bold ring-2 ${ring} ${textAccent}`}
+      className={`flex h-16 w-16 items-center justify-center rounded-full bg-well font-display text-2xl italic ring-2 sm:h-20 sm:w-20 ${ring} ${textAccent}`}
     >
       {initial}
     </div>
   )
 
-  const name = (
-    <span className={`mt-2 block max-w-[8rem] truncate font-semibold ${textAccent}`}>
-      {profile.username}
-    </span>
+  const body = (
+    <>
+      {avatar}
+      <span
+        className={`mt-2 block max-w-[7rem] truncate text-sm font-semibold sm:max-w-[9rem] ${textAccent}`}
+      >
+        {profile.username}
+      </span>
+      {profile.watchedCount != null && (
+        <span className="block text-xs tabular-nums text-faint">
+          {profile.watchedCount.toLocaleString('fr-FR')} films
+        </span>
+      )}
+    </>
   )
 
   if (profile.profileUrl) {
@@ -33,21 +41,13 @@ export default function ProfileBadge({ profile, accent = 'green', size = 'lg' })
         href={profile.profileUrl}
         target="_blank"
         rel="noreferrer"
-        className="group flex flex-col items-center text-center transition hover:opacity-90"
+        className="flex flex-col items-center text-center transition hover:opacity-85"
         title={`Voir ${profile.username} sur Letterboxd`}
       >
-        {avatar}
-        <span className="mt-2 block max-w-[8rem] truncate font-semibold text-white group-hover:underline">
-          {profile.username}
-        </span>
+        {body}
       </a>
     )
   }
 
-  return (
-    <div className="flex flex-col items-center text-center">
-      {avatar}
-      {name}
-    </div>
-  )
+  return <div className="flex flex-col items-center text-center">{body}</div>
 }

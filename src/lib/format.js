@@ -40,13 +40,13 @@ export function biasText(bias, nameA, nameB) {
 }
 
 export const toneClasses = {
-  green: 'text-lb-green',
-  blue: 'text-lb-blue',
-  orange: 'text-lb-orange',
+  green: 'text-green',
+  blue: 'text-blue',
+  orange: 'text-orange',
 }
 
-export const toneRing = {
-  green: 'ring-lb-green/40 shadow-[0_0_40px_-10px_rgba(0,224,84,0.5)]',
-  blue: 'ring-lb-blue/40 shadow-[0_0_40px_-10px_rgba(64,188,244,0.5)]',
-  orange: 'ring-lb-orange/40 shadow-[0_0_40px_-10px_rgba(255,128,0,0.5)]',
+// Libellé d'une décennie : 1990 -> "années 90", 2000 -> "années 2000".
+export function decadeLabel(decade) {
+  if (decade == null) return '—'
+  return decade < 2000 ? `années ${String(decade).slice(2)}` : `années ${decade}`
 }

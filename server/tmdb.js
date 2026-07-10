@@ -45,28 +45,28 @@ async function tmdbGet(path, query) {
   return res.json()
 }
 
-// Meilleur candidat : année identique, puis ±1 an (les millésimes Letterboxd
-// et TMDB divergent parfois d'un an autour des sorties festival), sinon 1er.
+// Meilleur candidat : parmi les résultats à ±1 an du millésime Letterboxd
+// (les années Letterboxd/TMDB divergent parfois d'un an — sorties festival),
+// le plus populaire gagne, avec un bonus si l'année est exacte. La popularité
+// départage les homonymes obscurs ("Crash" 2004 inconnu vs le Haggis daté 2005).
 function bestMatch(results, year) {
   if (!results?.length) return null
   if (year == null) return results[0]
   const yearOf = (r) => (r.release_date ? parseInt(r.release_date.slice(0, 4), 10) : null)
-  return (
-    results.find((r) => yearOf(r) === year) ||
-    results.find((r) => Math.abs((yearOf(r) ?? 0) - year) <= 1) ||
-    results[0]
-  )
+  const near = results.filter((r) => Math.abs((yearOf(r) ?? Infinity) - year) <= 1)
+  if (!near.length) return results[0]
+  const score = (r) => ((r.popularity ?? 0) + 0.01) * (yearOf(r) === year ? 2 : 1)
+  return near.reduce((best, r) => (score(r) > score(best) ? r : best))
 }
 
 async function searchFilm(name, year) {
+  // PAS de filtre primary_release_year : il exclut le bon film quand les
+  // millésimes Letterboxd/TMDB diffèrent d'un an (sorties festival) et fait
+  // remonter des homonymes obscurs ("300" -> un inconnu de 2006 au lieu du
+  // Snyder daté 2007 chez TMDB). On cherche large et on départage par année.
   const q = `query=${encodeURIComponent(name)}&include_adult=false`
-  let data = await tmdbGet('/search/movie', year ? `${q}&primary_release_year=${year}` : q)
-  let match = bestMatch(data.results, year)
-  if (!match && year) {
-    // Millésime différent chez TMDB : on retente sans filtre d'année.
-    data = await tmdbGet('/search/movie', q)
-    match = bestMatch(data.results, year)
-  }
+  const data = await tmdbGet('/search/movie', q)
+  const match = bestMatch(data.results, year)
   if (!match) return null
   return {
     tmdbId: match.id,

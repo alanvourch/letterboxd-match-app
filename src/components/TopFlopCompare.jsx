@@ -1,25 +1,34 @@
+import Section from './Section.jsx'
 import FilmList from './FilmList.jsx'
 
-// Affiche deux listes de films des deux users côte à côte (coups de cœur, flop…).
-export default function TopFlopCompare({ title, subtitle, a, b, nameA, nameB, renderMeta }) {
+// Deux listes de films côte à côte (coups de cœur récents, flop…).
+export default function TopFlopCompare({
+  eyebrow,
+  title,
+  subtitle,
+  a,
+  b,
+  nameA,
+  nameB,
+  renderMeta,
+  enrichMap,
+}) {
   return (
-    <section className="rounded-xl border border-lb-border bg-lb-card/70 p-4">
-      <h3 className="text-lg font-bold text-white">{title}</h3>
-      {subtitle && <p className="mb-3 text-xs text-lb-muted">{subtitle}</p>}
+    <Section eyebrow={eyebrow} title={title} subtitle={subtitle}>
       <div className="grid gap-6 md:grid-cols-2">
         <div>
-          <h4 className="mb-2 border-b border-lb-border pb-1 text-sm font-semibold text-lb-green">
+          <h4 className="mb-2 border-b border-line pb-1.5 text-sm font-semibold text-green">
             {nameA}
           </h4>
-          <FilmList rows={a} renderMeta={renderMeta} emptyText="Aucune note." />
+          <FilmList rows={a} renderMeta={renderMeta} enrichMap={enrichMap} emptyText="Aucune note." />
         </div>
         <div>
-          <h4 className="mb-2 border-b border-lb-border pb-1 text-sm font-semibold text-lb-blue">
+          <h4 className="mb-2 border-b border-line pb-1.5 text-sm font-semibold text-blue">
             {nameB}
           </h4>
-          <FilmList rows={b} renderMeta={renderMeta} emptyText="Aucune note." />
+          <FilmList rows={b} renderMeta={renderMeta} enrichMap={enrichMap} emptyText="Aucune note." />
         </div>
       </div>
-    </section>
+    </Section>
   )
 }

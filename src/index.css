@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Archivo:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,10 +10,34 @@ body,
 }
 
 body {
-  @apply bg-lb-bg text-lb-text antialiased;
-  background-image: radial-gradient(circle at 20% 0%, rgba(64, 188, 244, 0.08), transparent 40%),
-    radial-gradient(circle at 90% 10%, rgba(0, 224, 84, 0.06), transparent 35%);
-  background-attachment: fixed;
+  @apply bg-night text-ink antialiased;
+}
+
+/* Grain pellicule très léger sur toute la page (texture, pas décoration). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  background: rgba(255, 128, 0, 0.35);
+}
+
+/* Navigation clavier : anneau visible partout, dans la couleur du site. */
+:focus-visible {
+  outline: 2px solid #ff8000;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Barre de progression indéterminée (va-et-vient) */
@@ -23,5 +47,15 @@ body {
   }
   100% {
     transform: translateX(320%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
