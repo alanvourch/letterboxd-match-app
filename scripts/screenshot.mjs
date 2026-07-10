@@ -1,8 +1,8 @@
 // Capture d'écran de l'app via Edge headless (puppeteer-core).
-// Usage: node shot.mjs <url> <out.png> [width] [fullpage|viewport] [waitSelector] [extraWaitMs]
+// Usage: node scripts/screenshot.mjs <url> <out.png> [width] [fullpage|viewport] [waitSelector] [extraWaitMs] [height]
 import puppeteer from 'puppeteer-core'
 
-const [url, out, width = '1280', mode = 'fullpage', waitSelector = '', extraWait = '0'] =
+const [url, out, width = '1280', mode = 'fullpage', waitSelector = '', extraWait = '0', height = '900'] =
   process.argv.slice(2)
 
 const browser = await puppeteer.launch({
@@ -11,7 +11,7 @@ const browser = await puppeteer.launch({
   args: ['--no-sandbox', '--force-device-scale-factor=1'],
 })
 const page = await browser.newPage()
-await page.setViewport({ width: parseInt(width), height: 900 })
+await page.setViewport({ width: parseInt(width), height: parseInt(height) })
 const errors = []
 page.on('console', (m) => {
   if (m.type() === 'error') errors.push(m.text())

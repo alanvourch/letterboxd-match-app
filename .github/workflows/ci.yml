@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Build de production
+        run: npm run build
+
+      # Chaîne complète parsing zip/CSV -> moteur de compatibilité (assertions).
+      - name: Test fumée
+        run: node scripts/smoke-test.mjs
+
+      # Sauté en CI (l'export Letterboxd réel est gitignoré) mais présent pour
+      # tourner en local : node scripts/test-real-data.mjs
+      - name: Test données réelles (skip si export absent)
+        run: node scripts/test-real-data.mjs

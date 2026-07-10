@@ -2,11 +2,19 @@
 // Valide le parsing (comptes, favoris, absence de doublons via diary) et le
 // moteur de compatibilité (self-compare + variante modifiée).
 import { readFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseLooseCsvs } from '../src/lib/parseLetterboxd.js'
 import { computeCompatibility } from '../src/lib/compatibility.js'
 
 const DIR = 'letterboxd-nashkel-2026-06-22-00-45-utc'
+
+// L'export réel est gitignoré (données personnelles) : absent en CI, le test
+// est sauté proprement au lieu d'échouer.
+if (!existsSync(DIR)) {
+  console.log(`(skip) Export réel absent (${DIR}) — test sauté.`)
+  process.exit(0)
+}
 
 // Mime un objet File (name + text()) pour réutiliser parseLooseCsvs tel quel.
 async function fakeFile(relPath, displayName) {

@@ -93,7 +93,9 @@ async function fetchHtml(path, deadline = Infinity) {
     lastStatus = status
 
     if (status === 404) {
-      const err = new Error(`Profil introuvable (404) : ${path}`)
+      const err = new Error(
+        'Ce profil est introuvable sur Letterboxd. Vérifie l’orthographe du pseudo.',
+      )
       err.code = 'NOT_FOUND'
       throw err
     }
