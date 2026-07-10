@@ -294,7 +294,7 @@ export async function renderShareCard(result, enrichMap) {
   // Pied de carte
   ctx.fillStyle = C.ink
   ctx.font = '700 30px Archivo, sans-serif'
-  ctx.fillText(window.location.host || 'letterboxd-match.vercel.app', W / 2, H - 96)
+  ctx.fillText(window.location.host || 'letterboxd-match-app.vercel.app', W / 2, H - 96)
   ctx.fillStyle = C.faint
   ctx.font = '400 22px Archivo, sans-serif'
   ctx.fillText('Données Letterboxd · Affiches TMDB · Non affilié', W / 2, H - 56)

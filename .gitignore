@@ -12,3 +12,5 @@ dist
 # Exports Letterboxd personnels (données privées — ne pas committer)
 letterboxd-*/
 *.zip
+
+.vercel

@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/alanvourch/letterboxd-match-app/actions/workflows/ci.yml/badge.svg)](https://github.com/alanvourch/letterboxd-match-app/actions/workflows/ci.yml)
 
-🎬 **Démo live : [letterboxd-match.vercel.app](https://letterboxd-match.vercel.app)**
+🎬 **Démo live : [letterboxd-match-app.vercel.app](https://letterboxd-match-app.vercel.app)** — essaie par exemple [`/?a=nashkel&b=kurstboy`](https://letterboxd-match-app.vercel.app/?a=nashkel&b=kurstboy)
 
 ![Letterboxd Match — dashboard de résultats](docs/screenshot-hero.png)
 

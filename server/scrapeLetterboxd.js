@@ -50,6 +50,11 @@ function budgetError() {
 // Letterboxd (Cloudflare) bloque l'empreinte TLS du client HTTP de Node (403),
 // alors que curl passe. On délègue donc la requête à curl, présent nativement
 // sur Windows 10+/macOS/Linux. Le code HTTP est ajouté en fin de sortie via -w.
+//
+// Les en-têtes Accept + Sec-Fetch-* + Upgrade-Insecure-Requests sont REQUIS :
+// depuis une IP datacenter (Vercel/AWS), Cloudflare renvoie 403 sur les pages
+// paginées (/films/by/date/page/N/) sans eux — vérifié empiriquement : chaque
+// en-tête seul ne suffit pas, c'est le trio qui passe. Inoffensif en local.
 async function curlOnce(url) {
   let stdout
   try {
@@ -62,6 +67,16 @@ async function curlOnce(url) {
         UA,
         '-H',
         'Accept-Language: en-US,en;q=0.9',
+        '-H',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        '-H',
+        'Sec-Fetch-Dest: document',
+        '-H',
+        'Sec-Fetch-Mode: navigate',
+        '-H',
+        'Sec-Fetch-Site: same-origin',
+        '-H',
+        'Upgrade-Insecure-Requests: 1',
         '-w',
         '\n%{http_code}',
         url,
