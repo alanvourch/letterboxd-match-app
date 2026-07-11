@@ -21,13 +21,13 @@ export function filmTitle(film) {
   return film.year ? `${film.name} (${film.year})` : film.name
 }
 
-// Décrit la corrélation de manière lisible.
-export function correlationLabel(r) {
-  if (r == null) return 'pas assez de notes communes'
-  if (r >= 0.6) return 'goûts très alignés'
-  if (r >= 0.3) return 'goûts plutôt proches'
-  if (r >= -0.1) return 'goûts indépendants'
-  if (r >= -0.4) return 'goûts qui divergent'
+// Décrit l'accord de notes (0-100) de manière lisible.
+export function tasteLabel(score) {
+  if (score == null) return 'pas assez de notes communes'
+  if (score >= 80) return 'vous notez presque pareil'
+  if (score >= 60) return 'goûts très proches'
+  if (score >= 45) return 'goûts plutôt proches'
+  if (score >= 30) return 'goûts qui divergent'
   return 'goûts opposés'
 }
 

@@ -3,7 +3,7 @@ import Header from './components/Header.jsx'
 import UploadStep from './components/UploadStep.jsx'
 import ResultsDashboard from './components/ResultsDashboard.jsx'
 import LoadingOverlay from './components/LoadingOverlay.jsx'
-import { loadProfile, detectSource } from './lib/loadProfile.js'
+import { loadProfile } from './lib/loadProfile.js'
 import { computeCompatibility } from './lib/compatibility.js'
 import { enrichResult } from './lib/enrich.js'
 
@@ -37,15 +37,12 @@ export default function App() {
 
   // Transforme l'état d'un côté de l'UI en `source` pour loadProfile.
   function toSource(side) {
-    if (side.mode === 'public') {
-      return { type: 'public', username: side.username.trim() }
-    }
-    return { ...detectSource(side.files), username: side.username.trim() }
+    return { type: 'public', username: side.username.trim() }
   }
 
   async function handleCompare(sideA, sideB) {
     setLoading(true)
-    setScraping(sideA.mode === 'public' || sideB.mode === 'public')
+    setScraping(true)
     setError(null)
     try {
       // Séquentiel (et non Promise.all) : deux scrapes simultanés doublent le
@@ -58,10 +55,8 @@ export default function App() {
       setResult(res)
       window.scrollTo({ top: 0 })
 
-      // Lien partageable seulement si les deux profils sont publics
-      // (jamais d'URL pour un CSV : données privées).
-      const ha = sideA.mode === 'public' ? handleOf(profileA) : null
-      const hb = sideB.mode === 'public' ? handleOf(profileB) : null
+      const ha = handleOf(profileA)
+      const hb = handleOf(profileB)
       if (ha && hb) {
         const url = `${window.location.origin}/?a=${encodeURIComponent(ha)}&b=${encodeURIComponent(hb)}`
         setShareUrl(url)
@@ -125,8 +120,8 @@ export default function App() {
       <footer className="border-t border-line/60 py-6">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-4 text-center text-xs text-faint">
           <p>
-            Projet indépendant, non affilié à Letterboxd. Les exports CSV sont analysés
-            dans le navigateur — aucune donnée personnelle n'est envoyée ni conservée.
+            Projet indépendant, non affilié à Letterboxd. Seules les pages publiques
+            des profils sont lues — aucune donnée personnelle n'est conservée.
           </p>
           <p className="flex items-center justify-center gap-2">
             <svg

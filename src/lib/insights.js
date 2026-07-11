@@ -77,38 +77,63 @@ export function genreInsights(commonFilms, enrichMap) {
   return { rows: rows.slice(0, 8), signature, accord, clash }
 }
 
-/**
- * Réalisateurs présents dans plusieurs films vus en commun, avec la note
- * moyenne conjointe. Triés par nombre de films puis par moyenne.
- * @returns {Array<{ name, n, mean, films }>}
- */
-export function directorInsights(commonFilms, enrichMap) {
+// Agrège des personnes (réalisateurs OU acteurs) sur les films en commun :
+// nombre de films vus à deux, note moyenne conjointe, photo TMDB si connue.
+function peopleInsights(commonFilms, enrichMap, pickPeople, { minFilms, limit }) {
   if (!enrichMap) return []
-  const byDirector = new Map()
+  const byPerson = new Map()
 
   for (const f of commonFilms) {
     const info = enrichMap.get(filmKey(f.name, f.year))
-    if (!info?.directors?.length) continue
-    for (const name of info.directors) {
-      const d = byDirector.get(name) || { name, n: 0, ratedN: 0, sum: 0, films: [] }
+    const people = pickPeople(info)
+    if (!people?.length) continue
+    for (const p of people) {
+      const d =
+        byPerson.get(p.name) ||
+        { name: p.name, profilePath: null, n: 0, ratedN: 0, sum: 0, films: [] }
       d.n++
+      d.profilePath = d.profilePath || p.profilePath || null
       if (f.ratingA != null && f.ratingB != null) {
         d.ratedN++
         d.sum += (f.ratingA + f.ratingB) / 2
       }
       if (d.films.length < 4) d.films.push(f.name)
-      byDirector.set(name, d)
+      byPerson.set(p.name, d)
     }
   }
 
-  return [...byDirector.values()]
-    .filter((d) => d.n >= 2)
+  return [...byPerson.values()]
+    .filter((d) => d.n >= minFilms)
     .map((d) => ({
       name: d.name,
+      profilePath: d.profilePath,
       n: d.n,
       mean: d.ratedN ? d.sum / d.ratedN : null,
       films: d.films,
     }))
     .sort((x, y) => y.n - x.n || (y.mean ?? 0) - (x.mean ?? 0))
-    .slice(0, 6)
+    .slice(0, limit)
+}
+
+/**
+ * Réalisateurs présents dans plusieurs films vus en commun (avec photo).
+ * @returns {Array<{ name, profilePath, n, mean, films }>}
+ */
+export function directorInsights(commonFilms, enrichMap) {
+  return peopleInsights(commonFilms, enrichMap, (info) => info?.directors, {
+    minFilms: 2,
+    limit: 6,
+  })
+}
+
+/**
+ * Acteurs qui reviennent dans vos films en commun (avec photo). Seuil à 3
+ * films : les têtes d'affiche sont partout, 2 films ne veulent rien dire.
+ * @returns {Array<{ name, profilePath, n, mean, films }>}
+ */
+export function actorInsights(commonFilms, enrichMap) {
+  return peopleInsights(commonFilms, enrichMap, (info) => info?.cast, {
+    minFilms: 3,
+    limit: 6,
+  })
 }

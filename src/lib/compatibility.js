@@ -63,10 +63,12 @@ export function computeCompatibility(a, b) {
   const watchedA = watchedUris(a)
   const watchedB = watchedUris(b)
 
-  // --- Overlap des films vus (Jaccard) ---
+  // --- Overlap des films vus ---
   const common = [...watchedA].filter((uri) => watchedB.has(uri))
   const union = new Set([...watchedA, ...watchedB])
   const jaccard = union.size ? common.length / union.size : 0
+  const pctOfA = watchedA.size ? common.length / watchedA.size : 0 // part de A vue par B
+  const pctOfB = watchedB.size ? common.length / watchedB.size : 0 // part de B vue par A
 
   // --- Notes en commun -> corrélation + écart moyen ---
   // NB: `common` contient des CLÉS canoniques (nom+année), pas des URIs.
@@ -159,8 +161,12 @@ export function computeCompatibility(a, b) {
     return ordered.slice(0, 10)
   }
 
-  const flopA = sortByRatingAsc(ratedFilms(a)).slice(0, 10)
-  const flopB = sortByRatingAsc(ratedFilms(b)).slice(0, 10)
+  // Flop = films vraiment détestés (≤ 2.5★), pas juste "les moins bien notés" :
+  // chez un noteur généreux, le pire film à 4★ n'est pas un flop.
+  const flops = (profile) =>
+    sortByRatingAsc(ratedFilms(profile).filter((f) => f.rating <= 2.5)).slice(0, 10)
+  const flopA = flops(a)
+  const flopB = flops(b)
 
   // --- Recommandations : pépites d'un user que l'autre n'a PAS vues ---
   // (note >= 4 OU likée). Tri par note puis like. À faire découvrir à l'autre.
@@ -181,7 +187,7 @@ export function computeCompatibility(a, b) {
           Number(y.liked) - Number(x.liked) ||
           x.name.localeCompare(y.name),
       )
-      .slice(0, 5)
+      .slice(0, 6)
 
   const recommendations = {
     aToB: gemsFor(a, watchedB), // pépites de A à faire découvrir à B
@@ -227,21 +233,48 @@ export function computeCompatibility(a, b) {
   const sharedFavorites = a.favorites.filter((f) => favKeyB.has(filmKey(f.name, f.year)))
 
   // --- Score global ---
+  // Deux ingrédients, présentés en langage simple dans l'UI :
+  //
+  // 1. tasteScore ("accord de notes", 0-100) : moyenne de
+  //    - la PROXIMITÉ des notes : 100 − (écart moyen × 25). 0★ d'écart = 100,
+  //      2★ d'écart en moyenne = 50, 4★ = 0.
+  //    - la corrélation de Pearson ramenée sur [0, 100] (aime-t-on et
+  //      déteste-t-on les MÊMES films ?), quand elle est calculable.
+  //    Le mélange corrige les biais de chacune : Pearson seule donne 0 à deux
+  //    personnes qui mettent 4-5★ partout (séries quasi constantes) alors
+  //    qu'elles sont d'accord ; la proximité seule ignore le sens des goûts.
+  //
+  // 2. overlapScore ("recoupement", 0-100) : moyenne géométrique de la
+  //    couverture mutuelle √(pctOfA × pctOfB) — indice d'Ochiai, plus juste
+  //    que Jaccard quand les cinémathèques ont des tailles très différentes
+  //    (un compte à 3 000 films n'écrase plus un compte à 300).
   const enoughRatings = ratedPairs.length >= MIN_RATINGS_FOR_TASTE
-  const overlapScore = jaccard * 100
+  const overlapScore = 100 * Math.sqrt(pctOfA * pctOfB)
+  const closeness = meanDiff == null ? null : Math.max(0, 100 - meanDiff * 25)
+  const pearsonScore = correlation == null ? null : ((correlation + 1) / 2) * 100
+  const tasteScore =
+    closeness == null
+      ? null
+      : pearsonScore == null
+        ? closeness
+        : 0.5 * pearsonScore + 0.5 * closeness
+
   let score
-  if (correlation != null && enoughRatings) {
-    const tasteScore = ((correlation + 1) / 2) * 100
+  if (tasteScore != null && enoughRatings) {
     score = Math.round(0.7 * tasteScore + 0.3 * overlapScore)
-  } else if (correlation != null) {
+  } else if (tasteScore != null) {
     // peu de notes communes : on pondère moins le goût
-    const tasteScore = ((correlation + 1) / 2) * 100
     score = Math.round(0.4 * tasteScore + 0.6 * overlapScore)
   } else {
     // aucune note comparable : on se rabat sur l'overlap seul
     score = Math.round(overlapScore)
   }
   score = Math.max(0, Math.min(100, score))
+
+  // "Accord de notes" affichable : % des films co-notés où l'écart ≤ 0.5★.
+  const agreement = ratedPairs.length
+    ? ratedPairs.filter((p) => p.diff <= 0.5).length / ratedPairs.length
+    : null
 
   return {
     profiles: {
@@ -264,13 +297,16 @@ export function computeCompatibility(a, b) {
       common: common.length,
       union: union.size,
       jaccard,
-      pctOfA: watchedA.size ? common.length / watchedA.size : 0,
-      pctOfB: watchedB.size ? common.length / watchedB.size : 0,
+      score: Math.round(overlapScore),
+      pctOfA,
+      pctOfB,
     },
     taste: {
       correlation,
       meanDiff,
       ratingBias,
+      agreement,
+      score: tasteScore == null ? null : Math.round(tasteScore),
       sampleSize: ratedPairs.length,
       reliable: enoughRatings,
     },

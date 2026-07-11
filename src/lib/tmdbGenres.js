@@ -22,3 +22,26 @@ export const TMDB_GENRES = {
   10752: 'Guerre',
   37: 'Western',
 }
+
+// Emoji par genre : rend les insights lisibles d'un coup d'œil, sans graphique.
+export const GENRE_EMOJI = {
+  28: '💥',
+  12: '🗺️',
+  16: '🎨',
+  35: '😂',
+  80: '🕵️',
+  99: '🎥',
+  18: '🎭',
+  10751: '👨‍👩‍👧',
+  14: '🐉',
+  36: '📜',
+  27: '👻',
+  10402: '🎵',
+  9648: '🔍',
+  10749: '❤️',
+  878: '🚀',
+  10770: '📺',
+  53: '🔪',
+  10752: '⚔️',
+  37: '🤠',
+}

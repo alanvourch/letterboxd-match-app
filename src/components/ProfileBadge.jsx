@@ -23,7 +23,7 @@ export default function ProfileBadge({ profile, accent = 'green' }) {
     <>
       {avatar}
       <span
-        className={`mt-2 block max-w-[7rem] truncate text-sm font-semibold sm:max-w-[9rem] ${textAccent}`}
+        className={`mt-2 block max-w-[5.5rem] truncate text-sm font-semibold sm:max-w-[9rem] ${textAccent}`}
       >
         {profile.username}
       </span>

@@ -28,11 +28,11 @@ export default function ScoreHero({ score, label, profileA, profileB, children }
         <span>Admit two</span>
       </div>
 
-      <div className="px-6 py-8 sm:px-10">
-        <div className="flex items-center justify-center gap-5 sm:gap-12">
+      <div className="px-3 py-8 sm:px-10">
+        <div className="flex items-center justify-center gap-3 sm:gap-12">
           <ProfileBadge profile={profileA} accent="green" />
 
-          <div className="relative h-36 w-36 shrink-0 sm:h-44 sm:w-44">
+          <div className="relative h-28 w-28 shrink-0 sm:h-44 sm:w-44">
             <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
               <circle cx="60" cy="60" r="54" fill="none" stroke="#272d36" strokeWidth="6" />
               <circle
@@ -50,7 +50,7 @@ export default function ScoreHero({ score, label, profileA, profileB, children }
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span
-                className={`font-display text-5xl font-semibold tabular-nums sm:text-6xl ${tone}`}
+                className={`font-display text-4xl font-semibold tabular-nums sm:text-6xl ${tone}`}
               >
                 {score}
               </span>

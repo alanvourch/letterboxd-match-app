@@ -8,12 +8,11 @@
 
 ![Letterboxd Match — dashboard de résultats](docs/screenshot-hero.png)
 
-Tape deux pseudos Letterboxd publics (avec autocomplétion) — ou dépose un export
-CSV pour rester 100 % local — et obtiens :
+Tape deux pseudos Letterboxd publics (avec autocomplétion) et obtiens :
 
 - un **score de compatibilité 0–100** avec verdict,
 - vos **films adorés en commun** (avec affiches) et vos **films clivants**,
-- l'**accord par genre**, vos **réalisateurs en commun** et votre **décennie fétiche** (enrichissement TMDB),
+- vos **genres signature**, **réalisateurs et acteurs en commun** (avec photos) et votre **décennie fétiche**,
 - des **recommandations croisées** (les pépites de l'un que l'autre n'a pas vues),
 - une **carte de résultat à partager** (PNG généré dans le navigateur) et un **lien direct** `/?a=pseudo1&b=pseudo2`.
 
@@ -23,19 +22,19 @@ CSV pour rester 100 % local — et obtiens :
 
 ## La méthodologie de scoring
 
-Le score n'est pas une boîte noire, c'est un mélange pondéré de deux mesures
-classiques, calculées dans [`src/lib/compatibility.js`](src/lib/compatibility.js)
+Le score n'est pas une boîte noire, c'est un mélange pondéré de deux mesures,
+calculées dans [`src/lib/compatibility.js`](src/lib/compatibility.js)
 (fonctions pures, testées hors navigateur) :
 
 | Mesure | Ce qu'elle capture | Formule |
 |---|---|---|
-| **Corrélation de Pearson** `r` | Le *goût* : notez-vous les films dans le même sens ? | sur les paires de notes des films notés par les deux |
-| **Indice de Jaccard** `J` | Le *recoupement* : vos cinémathèques se chevauchent-elles ? | `|A ∩ B| / |A ∪ B|` sur les films vus |
+| **Accord de notes** (0–100) | Le *goût* : notez-vous les films pareil ? | moyenne de ① la proximité des notes `100 − écart moyen × 25` et ② la corrélation de Pearson ramenée sur [0, 100], sur les films notés par les deux |
+| **Recoupement** (0–100) | Vos cinémathèques se chevauchent-elles ? | indice d'Ochiai `√(pctOfA × pctOfB)` — la moyenne géométrique de « la part des films de l'un vue par l'autre », plus juste que Jaccard quand les comptes ont des tailles très différentes |
 
-La corrélation est ramenée de [−1, +1] vers [0, 100], puis :
+Puis :
 
-- **≥ 10 films co-notés** : `score = 0.7 × goût + 0.3 × recoupement`
-- **1–9 films co-notés** : `score = 0.4 × goût + 0.6 × recoupement` (corrélation peu fiable)
+- **≥ 10 films co-notés** : `score = 0.7 × accord + 0.3 × recoupement`
+- **1–9 films co-notés** : `score = 0.4 × accord + 0.6 × recoupement` (accord peu fiable)
 - **aucune note comparable** : recoupement seul
 
 S'y ajoutent un **biais de générosité** signé (qui note plus haut, en moyenne),
@@ -73,9 +72,10 @@ membre, et le navigateur ne peut pas le lire en cross-origin. Le scraping passe
 par `curl` (client HTTP de Node bloqué par l'anti-bot de Letterboxd), avec
 concurrence limitée, backoff exponentiel et budget temps global.
 
-**Confidentialité** : le mode CSV est analysé entièrement dans le navigateur —
-aucune donnée n'est envoyée ni conservée. Le lien partageable n'existe que pour
-deux profils publics.
+**Confidentialité** : seules les pages publiques des profils sont lues, rien
+n'est conservé. (Le parseur d'export CSV vit toujours dans `src/lib/` — il sert
+de vérité terrain aux tests scrape-vs-export — mais l'UI ne propose plus
+l'upload : personne ne s'en servait.)
 
 ## Lancer le projet
 

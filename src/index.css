@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Archivo:wght@400;500;600;700;800&display=swap');
+/* Polices chargées via <link> dans index.html (preconnect + non bloquant). */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,6 +7,12 @@ html,
 body,
 #root {
   height: 100%;
+}
+
+/* Mobile-first : aucun débordement horizontal, jamais. */
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
@@ -33,11 +39,18 @@ body::before {
   background: rgba(255, 128, 0, 0.35);
 }
 
-/* Navigation clavier : anneau visible partout, dans la couleur du site. */
+/* Navigation clavier : anneau visible partout, dans la couleur du site.
+   Exception : les champs texte ont déjà leur propre bordure accentuée au
+   focus — le rectangle orange par-dessus était du bruit visuel. */
 :focus-visible {
   outline: 2px solid #ff8000;
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+input:focus-visible,
+input:focus {
+  outline: none;
 }
 
 /* Barre de progression indéterminée (va-et-vient) */

@@ -1,103 +1,64 @@
 import Section from './Section.jsx'
 import { ratingText } from '../lib/format.js'
+import { posterUrl } from '../lib/enrich.js'
+import { GENRE_EMOJI } from '../lib/tmdbGenres.js'
 
-// Insights TMDB : accord par genre (barres appariées A/B) + réalisateurs en
-// commun + genre signature. Rendu uniquement si l'enrichissement a abouti.
-//
-// Couleurs des barres : variantes assombries validées (contraste, daltonisme)
-// -> greenfill / bluefill ; le texte reste en tokens ink/mut, jamais coloré.
+// "Votre ADN ciné" : genres racontés en grandes tuiles emoji (fini le
+// graphique à barres) + réalisateurs et acteurs en commun AVEC photos.
+// Rendu uniquement si l'enrichissement TMDB a abouti.
 
-function LegendChip({ colorClass, label }) {
+function GenreTile({ emoji, eyebrow, name, detail, accent = 'border-line' }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs text-mut">
-      <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-[2px] ${colorClass}`} />
-      {label}
-    </span>
-  )
-}
-
-function GenreBars({ rows, nameA, nameB }) {
-  return (
-    <div>
-      <div className="mb-3 flex flex-wrap gap-4">
-        <LegendChip colorClass="bg-greenfill" label={nameA} />
-        <LegendChip colorClass="bg-bluefill" label={nameB} />
-      </div>
-      <ul className="space-y-3">
-        {rows
-          .filter((g) => g.meanA != null)
-          .slice(0, 6)
-          .map((g) => (
-            <li key={g.id}>
-              <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-sm font-medium text-ink">{g.name}</span>
-                <span className="text-xs tabular-nums text-faint">
-                  {g.ratedN} films co-notés
-                </span>
-              </div>
-              <div
-                className="space-y-0.5"
-                title={`${g.name} — ${nameA} : ${ratingText(g.meanA)}★ · ${nameB} : ${ratingText(g.meanB)}★`}
-              >
-                {[
-                  { mean: g.meanA, fill: 'bg-greenfill', who: nameA },
-                  { mean: g.meanB, fill: 'bg-bluefill', who: nameB },
-                ].map(({ mean, fill, who }) => (
-                  <div key={who} className="flex items-center gap-2">
-                    <div className="h-2.5 flex-1 overflow-hidden rounded-r-[4px] bg-well">
-                      <div
-                        className={`h-full rounded-r-[4px] ${fill}`}
-                        style={{ width: `${(mean / 5) * 100}%` }}
-                      />
-                    </div>
-                    <span className="w-8 shrink-0 text-right text-xs tabular-nums text-mut">
-                      {ratingText(mean)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </li>
-          ))}
-      </ul>
-      <p className="mt-3 text-xs text-faint">
-        Note moyenne de chacun par genre, sur les films notés par les deux (échelle 0–5).
-      </p>
-    </div>
-  )
-}
-
-function HighlightTile({ eyebrow, big, detail }) {
-  return (
-    <div className="rounded-lg border border-line bg-well p-4">
+    <div className={`rounded-xl border bg-well p-4 ${accent}`}>
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-faint">
         {eyebrow}
       </p>
-      <p className="mt-1 font-display text-xl font-semibold text-ink">{big}</p>
-      <p className="mt-1 text-xs leading-relaxed text-mut">{detail}</p>
+      <p className="mt-2 flex items-center gap-2.5">
+        <span aria-hidden="true" className="text-3xl leading-none">
+          {emoji}
+        </span>
+        <span className="font-display text-xl font-semibold text-ink">{name}</span>
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-mut">{detail}</p>
     </div>
   )
 }
 
-function Directors({ directors }) {
+// Rangée de visages : photo ronde, nom, films vus à deux + note moyenne.
+function PeopleRow({ people }) {
   return (
-    <ul className="divide-y divide-line">
-      {directors.map((d) => (
-        <li key={d.name} className="flex items-baseline justify-between gap-3 py-2.5">
-          <div className="min-w-0">
-            <p className="truncate font-display text-base font-semibold text-ink">
-              {d.name}
-            </p>
-            <p className="truncate text-xs text-faint" title={d.films.join(', ')}>
-              {d.films.join(' · ')}
-            </p>
-          </div>
-          <p className="shrink-0 text-right text-xs text-mut">
-            <span className="tabular-nums text-ink">{d.n}</span> films vus à deux
-            {d.mean != null && (
-              <span className="block tabular-nums">
-                notés {ratingText(d.mean)}
-                <span className="text-orange">★</span> en moyenne
-              </span>
+    <ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-6">
+      {people.map((p) => (
+        <li key={p.name} className="text-center">
+          {p.profilePath ? (
+            <img
+              src={posterUrl(p.profilePath, 'w185')}
+              alt={p.name}
+              loading="lazy"
+              className="mx-auto h-16 w-16 rounded-full border border-line object-cover sm:h-20 sm:w-20"
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-line bg-well font-display text-xl italic text-mut sm:h-20 sm:w-20"
+            >
+              {p.name.charAt(0)}
+            </span>
+          )}
+          <p
+            className="mt-2 truncate text-xs font-semibold text-ink"
+            title={`${p.name} — ${p.films.join(', ')}`}
+          >
+            {p.name}
+          </p>
+          <p className="text-[0.7rem] tabular-nums text-mut">
+            {p.n} films
+            {p.mean != null && (
+              <>
+                {' · '}
+                {ratingText(p.mean)}
+                <span className="text-orange">★</span>
+              </>
             )}
           </p>
         </li>
@@ -106,45 +67,57 @@ function Directors({ directors }) {
   )
 }
 
-export default function InsightsSection({ genres, directors, nameA, nameB, pending }) {
+export default function InsightsSection({
+  genres,
+  directors,
+  actors,
+  nameA,
+  nameB,
+  pending,
+}) {
   if (pending) {
     return (
       <Section
-        eyebrow="Enrichissement TMDB"
-        title="Genres & réalisateurs"
-        subtitle="Analyse des films en commun via la base TMDB…"
+        eyebrow="Votre ADN ciné"
+        title="Genres, réalisateurs & acteurs"
+        subtitle="Analyse de vos films en commun…"
       >
         <div className="flex items-center gap-3 py-6 text-sm text-mut">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-orange" />
-          Recherche des genres et réalisateurs de vos films communs…
+          On regarde ce que vos films en commun racontent de vous deux…
         </div>
       </Section>
     )
   }
 
-  if (!genres && !directors?.length) return null
+  const hasPeople = directors?.length > 0 || actors?.length > 0
+  if (!genres && !hasPeople) return null
 
   const tiles = []
   if (genres?.signature && genres.signature.coLoved > 0) {
     tiles.push({
-      eyebrow: 'Genre signature',
-      big: genres.signature.name,
+      emoji: GENRE_EMOJI[genres.signature.id] || '🎬',
+      eyebrow: 'Votre genre signature',
+      name: genres.signature.name,
       detail: `${genres.signature.coLoved} films de ce genre adorés par vous deux — c'est votre terrain de jeu.`,
+      accent: 'border-orange/40',
     })
   }
   if (genres?.accord) {
     tiles.push({
+      emoji: GENRE_EMOJI[genres.accord.id] || '🤝',
       eyebrow: "Terrain d'entente",
-      big: genres.accord.name,
-      detail: `Vos moyennes n'y diffèrent que de ${Math.abs(
-        genres.accord.meanA - genres.accord.meanB,
-      ).toFixed(1)}★ sur ${genres.accord.ratedN} films co-notés.`,
+      name: genres.accord.name,
+      detail: `Vous lui donnez quasiment la même note (${ratingText(
+        (genres.accord.meanA + genres.accord.meanB) / 2,
+      )}★ en moyenne) sur ${genres.accord.ratedN} films.`,
     })
   }
   if (genres?.clash) {
     tiles.push({
+      emoji: GENRE_EMOJI[genres.clash.id] || '⚡',
       eyebrow: 'Le genre qui fâche',
-      big: genres.clash.name,
+      name: genres.clash.name,
       detail: `${genres.clash.meanA > genres.clash.meanB ? nameA : nameB} le note ${Math.abs(
         genres.clash.meanA - genres.clash.meanB,
       ).toFixed(1)}★ plus haut que l'autre, en moyenne.`,
@@ -153,36 +126,35 @@ export default function InsightsSection({ genres, directors, nameA, nameB, pendi
 
   return (
     <Section
-      eyebrow="Enrichi via TMDB"
-      title="Genres & réalisateurs"
-      subtitle="Calculé sur vos films vus en commun."
+      eyebrow="Votre ADN ciné"
+      title="Genres, réalisateurs & acteurs"
+      subtitle="Ce que vos films vus en commun racontent de vous deux."
     >
       {tiles.length > 0 && (
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3">
           {tiles.map((t) => (
-            <HighlightTile key={t.eyebrow} {...t} />
+            <GenreTile key={t.eyebrow} {...t} />
           ))}
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {genres?.rows?.length > 0 && (
-          <div>
-            <h4 className="mb-3 border-b border-line pb-1.5 text-sm font-semibold text-ink">
-              L'accord par genre
-            </h4>
-            <GenreBars rows={genres.rows} nameA={nameA} nameB={nameB} />
-          </div>
-        )}
-        {directors?.length > 0 && (
-          <div>
-            <h4 className="mb-3 border-b border-line pb-1.5 text-sm font-semibold text-ink">
-              Vos réalisateurs en commun
-            </h4>
-            <Directors directors={directors} />
-          </div>
-        )}
-      </div>
+      {directors?.length > 0 && (
+        <div className="mt-6">
+          <h4 className="mb-4 border-b border-line pb-1.5 text-sm font-semibold text-ink">
+            Vos réalisateurs en commun
+          </h4>
+          <PeopleRow people={directors} />
+        </div>
+      )}
+
+      {actors?.length > 0 && (
+        <div className="mt-6">
+          <h4 className="mb-4 border-b border-line pb-1.5 text-sm font-semibold text-ink">
+            Les acteurs qui reviennent chez vous deux
+          </h4>
+          <PeopleRow people={actors} />
+        </div>
+      )}
     </Section>
   )
 }

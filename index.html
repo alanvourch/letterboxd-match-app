@@ -7,18 +7,29 @@
     <title>Letterboxd Match — êtes-vous compatibles ?</title>
     <meta
       name="description"
-      content="Comparez deux profils Letterboxd : score de compatibilité cinéphile (corrélation de Pearson + indice de Jaccard), films adorés en commun, genres, réalisateurs partagés et recommandations croisées."
+      content="Compare deux profils Letterboxd : score de compatibilité cinéphile, films adorés en commun, réalisateurs et acteurs partagés, désaccords assumés et recommandations croisées."
     />
     <meta name="theme-color" content="#0c0e11" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Letterboxd Match — êtes-vous compatibles ?" />
     <meta
       property="og:description"
-      content="Deux profils Letterboxd entrent, un score de compatibilité cinéphile sort. Films adorés en commun, genres et réalisateurs partagés, désaccords assumés."
+      content="Deux profils Letterboxd entrent, un score de compatibilité cinéphile sort. Films adorés en commun, réalisateurs et acteurs partagés, désaccords assumés."
     />
     <meta property="og:url" content="https://letterboxd-match-app.vercel.app/" />
     <meta property="og:image" content="https://letterboxd-match-app.vercel.app/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Polices : preconnect + feuille non bloquante (plus rapide que l'@import CSS). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Archivo:wght@400;500;600;700;800&display=swap"
+    />
+    <!-- Les affiches et avatars arrivent de ces CDNs dès les résultats. -->
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="https://a.ltrbxd.com" />
   </head>
   <body>
     <div id="root"></div>

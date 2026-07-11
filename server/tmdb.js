@@ -78,9 +78,15 @@ async function searchFilm(name, year) {
   }
 }
 
-async function fetchDirectors(tmdbId) {
+// Réalisateurs + tête d'affiche, AVEC photo (profile_path) : l'UI affiche des
+// visages, pas des listes de noms.
+async function fetchCredits(tmdbId) {
   const data = await tmdbGet(`/movie/${tmdbId}/credits`, 'language=fr-FR')
-  return (data.crew || []).filter((c) => c.job === 'Director').map((c) => c.name)
+  const person = (c) => ({ name: c.name, profilePath: c.profile_path || null })
+  return {
+    directors: (data.crew || []).filter((c) => c.job === 'Director').map(person),
+    cast: (data.cast || []).slice(0, 6).map(person),
+  }
 }
 
 async function mapLimit(items, limit, fn) {
@@ -115,7 +121,9 @@ export async function enrichFilms(films) {
         cache.set(key, { ts: Date.now(), data })
       }
       if (data && f.wantCredits && data.directors === undefined) {
-        data.directors = await fetchDirectors(data.tmdbId)
+        const credits = await fetchCredits(data.tmdbId)
+        data.directors = credits.directors
+        data.cast = credits.cast
       }
     } catch {
       // Échec TMDB ponctuel : film non enrichi, on ne casse pas le lot.

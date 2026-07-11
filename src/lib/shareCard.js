@@ -1,5 +1,6 @@
 import { filmKey } from './filmKey.js'
 import { posterUrl } from './enrich.js'
+import { HEART_PATH } from './heartPath.js'
 
 // ---------------------------------------------------------------------------
 // Carte de résultat partageable — dessinée en canvas (1080×1350, format 4:5
@@ -138,20 +139,26 @@ export async function renderShareCard(result, enrichMap) {
   ctx.fillStyle = C.night
   ctx.fillRect(0, 0, W, H)
 
-  // En-tête : tri-points + wordmark
+  // En-tête : le logo — pastilles A/B qui se chevauchent + cœur orange
   const dotsY = 92
+  ctx.globalAlpha = 0.9
   ctx.fillStyle = C.green
   ctx.beginPath()
-  ctx.arc(W / 2 - 30, dotsY, 16, 0, Math.PI * 2)
+  ctx.arc(W / 2 - 17, dotsY, 17, 0, Math.PI * 2)
   ctx.fill()
   ctx.fillStyle = C.blue
   ctx.beginPath()
-  ctx.arc(W / 2 + 30, dotsY, 16, 0, Math.PI * 2)
+  ctx.arc(W / 2 + 17, dotsY, 17, 0, Math.PI * 2)
   ctx.fill()
+  ctx.globalAlpha = 1
+  const heart = new Path2D(HEART_PATH)
+  ctx.save()
+  ctx.translate(W / 2, dotsY + 1)
+  ctx.scale(1.15, 1.15)
+  ctx.translate(-12, -12)
   ctx.fillStyle = C.orange
-  ctx.beginPath()
-  ctx.arc(W / 2, dotsY, 9, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.fill(heart)
+  ctx.restore()
 
   ctx.fillStyle = C.mut
   ctx.font = '700 30px Archivo, sans-serif'
@@ -251,12 +258,10 @@ export async function renderShareCard(result, enrichMap) {
   // Ligne de stats
   ctx.font = '400 26px Archivo, sans-serif'
   ctx.fillStyle = C.mut
-  const corr =
-    taste.correlation == null
-      ? 'notes non comparables'
-      : `corrélation des notes ${taste.correlation >= 0 ? '+' : ''}${taste.correlation.toFixed(2)}`
+  const tasteBit =
+    taste.score == null ? 'notes non comparables' : `accord de notes ${taste.score}/100`
   ctx.fillText(
-    `${overlap.common.toLocaleString('fr-FR')} films vus en commun · ${corr}`,
+    `${overlap.common.toLocaleString('fr-FR')} films vus en commun · ${tasteBit}`,
     W / 2,
     ty + th - 40,
   )

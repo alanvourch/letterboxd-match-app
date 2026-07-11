@@ -1,4 +1,6 @@
-// En-tête global : logo tri-points + wordmark, lien GitHub à droite.
+import Logo from './Logo.jsx'
+
+// En-tête global : logo (pastilles + cœur) + wordmark, lien GitHub à droite.
 export default function Header({ onHome }) {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-night/85 backdrop-blur">
@@ -8,11 +10,7 @@ export default function Header({ onHome }) {
           className="group flex items-center gap-2.5 transition hover:opacity-90"
           title="Revenir à l'accueil"
         >
-          <span aria-hidden="true" className="relative block h-5 w-8">
-            <span className="absolute left-0 top-0 h-5 w-5 rounded-full bg-green/85" />
-            <span className="absolute right-0 top-0 h-5 w-5 rounded-full bg-blue/85" />
-            <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange" />
-          </span>
+          <Logo className="h-6 w-9" />
           <span className="font-display text-lg font-semibold tracking-tight text-ink">
             Letterboxd&nbsp;<span className="italic text-orange">Match</span>
           </span>

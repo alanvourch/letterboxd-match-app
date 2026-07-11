@@ -8,9 +8,8 @@ import DecadesSection from './DecadesSection.jsx'
 import RecommendationsSection from './RecommendationsSection.jsx'
 import TopFlopCompare from './TopFlopCompare.jsx'
 import FavoritesCompare from './FavoritesCompare.jsx'
-import { ratingMeta } from './FilmList.jsx'
-import { pct, correlationLabel, biasText } from '../lib/format.js'
-import { genreInsights, directorInsights } from '../lib/insights.js'
+import { pct, tasteLabel, biasText } from '../lib/format.js'
+import { genreInsights, directorInsights, actorInsights } from '../lib/insights.js'
 
 export default function ResultsDashboard({ result, enrichMap, enriching, shareUrl, onReset }) {
   const {
@@ -39,30 +38,49 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
     () => directorInsights(commonFilms, enrichMap),
     [commonFilms, enrichMap],
   )
+  const actors = useMemo(
+    () => actorInsights(commonFilms, enrichMap),
+    [commonFilms, enrichMap],
+  )
 
-  const corrValue =
-    taste.correlation == null
-      ? '—'
-      : (taste.correlation >= 0 ? '+' : '') + taste.correlation.toFixed(2)
   const bias = biasText(taste.ratingBias, nameA, nameB)
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-10">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:py-10">
       <ScoreHero score={score} label={label} profileA={profiles.a} profileB={profiles.b}>
         <ShareActions result={result} enrichMap={enrichMap} shareUrl={shareUrl} />
       </ScoreHero>
 
-      {/* Métriques clés (avec infobulles "?") */}
+      {/* Métriques clés, en français courant (les infobulles "?" détaillent) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <StatCard
           value={overlap.common.toLocaleString('fr-FR')}
-          label="Films en commun"
-          hint={`sur ${overlap.union.toLocaleString('fr-FR')} au total`}
-          info="Nombre de films que vous avez vus tous les deux."
+          label="Films vus à deux"
+          hint={`sur ${overlap.union.toLocaleString('fr-FR')} films au total`}
+          tone="text-orange"
+          info="Le nombre de films que vous avez vus tous les deux."
         />
         <StatCard
-          value={pct(overlap.jaccard)}
-          label="Indice de Jaccard"
+          value={taste.score == null ? '—' : `${taste.score}`}
+          label="Accord de notes"
+          hint={
+            taste.agreement != null ? (
+              <>
+                {tasteLabel(taste.score)}
+                <br />
+                d'accord à ½★ près sur{' '}
+                <span className="text-ink">{pct(taste.agreement)}</span> des films
+              </>
+            ) : (
+              'pas assez de notes communes'
+            )
+          }
+          tone="text-green"
+          info={`De 0 à 100 : est-ce que vous mettez les mêmes notes aux mêmes films ? Calculé sur les ${taste.sampleSize} films que vous avez notés tous les deux.`}
+        />
+        <StatCard
+          value={`${overlap.score}`}
+          label="Recoupement"
           hint={
             <>
               {nameA} a vu <span className="text-ink">{pct(overlap.pctOfB)}</span> des
@@ -73,14 +91,7 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
             </>
           }
           tone="text-blue"
-          info="Films communs ÷ films vus par l'un OU l'autre (100 % = la même liste). En dessous, le détail dans chaque sens : qui a vu quelle part du catalogue de l'autre."
-        />
-        <StatCard
-          value={corrValue}
-          label="Corrélation de Pearson"
-          hint={correlationLabel(taste.correlation)}
-          tone="text-green"
-          info="De −1 à +1 : notez-vous les films dans le même sens ? +1 = goûts identiques, 0 = aucun lien, −1 = opposés. Calculée sur vos notes communes."
+          info="De 0 à 100 : à quel point vos collections de films se chevauchent. 100 = exactement les mêmes films."
         />
         <StatCard
           value={
@@ -90,35 +101,36 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
                 ? '≈'
                 : `${taste.ratingBias > 0 ? '+' : '−'}${Math.abs(taste.ratingBias).toFixed(1)}★`
           }
-          label="Générosité des notes"
+          label="Générosité"
           hint={bias || `sur ${taste.sampleSize} films notés`}
-          tone="text-orange"
-          info={`Qui note le plus haut en moyenne, sur les ${taste.sampleSize} films notés par les deux. "+0.4★" = ${nameA} met en moyenne 0,4 étoile de plus que ${nameB}.`}
+          info={`Qui note le plus haut en moyenne ? "+0.4★" = ${nameA} met en moyenne 0,4 étoile de plus que ${nameB}.`}
         />
       </div>
 
-      {/* Méthodologie, assumée et lisible */}
+      {/* Méthode, en langage courant */}
       <details className="rounded-xl border border-line bg-card/60 px-4 py-3 text-sm">
         <summary className="cursor-pointer font-medium text-ink">
           Comment le score est-il calculé ?
         </summary>
         <div className="mt-3 space-y-2 text-mut">
           <p>
-            Le score mélange deux mesures classiques :{' '}
-            <span className="text-green">la corrélation de Pearson</span> sur vos notes
-            communes (est-ce qu'on aime et déteste les mêmes films ?) et{' '}
-            <span className="text-blue">l'indice de Jaccard</span> de vos filmographies
-            (à quel point nos cinémathèques se recoupent ?).
+            Deux ingrédients : <span className="text-green">l'accord de notes</span>{' '}
+            (mettez-vous les mêmes notes aux mêmes films ?) et{' '}
+            <span className="text-blue">le recoupement</span> (à quel point vos
+            collections de films se chevauchent).
           </p>
           <p>
-            Avec {taste.sampleSize} films co-notés, la pondération est de{' '}
-            {taste.reliable ? '70 % goût / 30 % recoupement' : taste.correlation != null ? '40 % goût / 60 % recoupement (peu de notes communes : la corrélation est moins fiable)' : '100 % recoupement (aucune note comparable)'}.
-            La corrélation est ramenée de [−1, +1] vers [0, 100] avant pondération.
+            Avec {taste.sampleSize} films notés par vous deux, le score pèse{' '}
+            {taste.reliable
+              ? '70 % accord de notes + 30 % recoupement.'
+              : taste.score != null
+                ? "40 % accord + 60 % recoupement (peu de notes communes : l'accord est moins fiable)."
+                : '100 % recoupement (aucune note comparable).'}
           </p>
-          {!taste.reliable && taste.correlation != null && (
+          {!taste.reliable && taste.score != null && (
             <p className="text-faint">
-              ⚠️ Moins de 10 films notés en commun : prends la corrélation avec des
-              pincettes.
+              ⚠️ Moins de 10 films notés en commun : notez plus de films pour un score
+              plus fiable !
             </p>
           )}
         </div>
@@ -135,6 +147,7 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
       <InsightsSection
         genres={genres}
         directors={directors}
+        actors={actors}
         nameA={nameA}
         nameB={nameB}
         pending={enriching}
@@ -164,19 +177,20 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
         b={recentLoved.b}
         nameA={nameA}
         nameB={nameB}
-        renderMeta={ratingMeta}
         enrichMap={enrichMap}
+        emptyText="Aucun coup de cœur récent."
       />
 
       <TopFlopCompare
         eyebrow="Sans pitié"
-        title="Flop 10"
-        subtitle="Films les moins bien notés de chacun."
+        title="Les flops de chacun"
+        subtitle="Films notés 2.5★ ou moins — les navets assumés."
         a={flop.a}
         b={flop.b}
         nameA={nameA}
         nameB={nameB}
         enrichMap={enrichMap}
+        emptyText="Aucun film détesté. Que de l'amour."
       />
 
       <div className="text-center">
