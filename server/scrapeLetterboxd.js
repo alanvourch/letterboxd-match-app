@@ -63,6 +63,10 @@ async function curlOnce(url) {
       [
         '-sS',
         '--compressed',
+        '--connect-timeout',
+        '10',
+        '--max-time',
+        '45',
         '-A',
         UA,
         '-H',
@@ -87,12 +91,21 @@ async function curlOnce(url) {
     // ENOENT = binaire curl absent du runtime (ne devrait pas arriver : vérifié
     // présent sur Vercel/Amazon Linux, Windows 10+, macOS — mais on veut une
     // erreur explicite côté utilisateur si ça change un jour).
+    if (e.code === 'ENOENT') {
+      const err = new Error(
+        'curl est absent de l’environnement serveur : le mode « pseudo public » est indisponible. Utilise l’import CSV.',
+      )
+      err.code = 'CURL_MISSING'
+      throw err
+    }
+    // Échec transport (DNS, TLS reset, timeout…) : message PROPRE pour
+    // l'utilisateur (jamais la ligne de commande), détail dans les logs
+    // serveur, et code NETWORK -> retryable par fetchHtml.
+    console.error(`[scrape] curl a échoué sur ${url} :`, e.message)
     const err = new Error(
-      e.code === 'ENOENT'
-        ? 'curl est absent de l’environnement serveur : le mode « pseudo public » est indisponible. Utilise l’import CSV.'
-        : `Échec réseau vers Letterboxd : ${e.message}`,
+      'Letterboxd n’a pas répondu (incident réseau passager). Réessaie dans un instant.',
     )
-    if (e.code === 'ENOENT') err.code = 'CURL_MISSING'
+    err.code = 'NETWORK'
     throw err
   }
   const nl = stdout.lastIndexOf('\n')
@@ -104,7 +117,19 @@ async function fetchHtml(path, deadline = Infinity) {
   const url = BASE + path
   let lastStatus
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
-    const { status, body } = await curlOnce(url)
+    let status, body
+    try {
+      ;({ status, body } = await curlOnce(url))
+    } catch (e) {
+      // Erreur transport passagère : on retente avec le même backoff que les
+      // 403/429. curl absent (CURL_MISSING) remonte immédiatement.
+      if (e.code === 'NETWORK' && attempt < RETRIES) {
+        if (Date.now() > deadline) throw budgetError()
+        await sleep(800 * 2 ** attempt)
+        continue
+      }
+      throw e
+    }
     lastStatus = status
 
     if (status === 404) {
@@ -124,7 +149,12 @@ async function fetchHtml(path, deadline = Infinity) {
     }
     break
   }
-  const err = new Error(`Letterboxd a répondu ${lastStatus} pour ${path} (rate-limit ?)`)
+  console.error(`[scrape] Letterboxd a répondu ${lastStatus} pour ${path}`)
+  const err = new Error(
+    lastStatus === 403 || lastStatus === 429
+      ? 'Letterboxd limite temporairement nos requêtes. Patiente une minute ou deux puis réessaie.'
+      : `Letterboxd a répondu une erreur (HTTP ${lastStatus}). Réessaie dans un instant.`,
+  )
   if (lastStatus === 403 || lastStatus === 429) err.code = 'RATE_LIMITED'
   throw err
 }

@@ -37,19 +37,28 @@ function PublicSearchInput({ accent, value, onChange }) {
       return
     }
     setLoading(true)
+    // AbortController : une réponse lente d'une frappe précédente ne doit
+    // jamais écraser les résultats de la frappe courante.
+    const ctrl = new AbortController()
     const id = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search/${encodeURIComponent(q)}`)
+        const res = await fetch(`/api/search/${encodeURIComponent(q)}`, {
+          signal: ctrl.signal,
+        })
         const data = await res.json()
         setResults(data.results || [])
         setOpen(true)
-      } catch {
+        setLoading(false)
+      } catch (e) {
+        if (e.name === 'AbortError') return // frappe suivante en cours
         setResults([])
-      } finally {
         setLoading(false)
       }
     }, 250)
-    return () => clearTimeout(id)
+    return () => {
+      clearTimeout(id)
+      ctrl.abort()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 
@@ -243,11 +252,21 @@ const emptySide = () => ({ mode: 'public', files: null, filesLabel: null, userna
 const sideReady = (s) =>
   s.mode === 'file' ? !!s.files : s.username.trim().length > 0
 
-export default function UploadStep({ onCompare, loading, error, initial }) {
+export default function UploadStep({ onCompare, loading, error, onEdit, initial }) {
   const [a, setA] = useState(() => ({ ...emptySide(), username: initial?.a || '' }))
   const [b, setB] = useState(() => ({ ...emptySide(), username: initial?.b || '' }))
 
   const ready = sideReady(a) && sideReady(b) && !loading
+
+  // Une erreur affichée disparaît dès que l'utilisateur corrige quelque chose.
+  const editA = (v) => {
+    setA(v)
+    onEdit?.()
+  }
+  const editB = (v) => {
+    setB(v)
+    onEdit?.()
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
@@ -268,14 +287,14 @@ export default function UploadStep({ onCompare, loading, error, initial }) {
       </header>
 
       <div className="relative mb-8 grid gap-6 sm:grid-cols-2 sm:gap-10">
-        <ProfileInput accent="green" label="Profil 1" side={a} onChange={setA} />
+        <ProfileInput accent="green" label="Profil 1" side={a} onChange={editA} />
         <span
           aria-hidden="true"
           className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 font-display text-2xl italic text-faint sm:block"
         >
           vs
         </span>
-        <ProfileInput accent="blue" label="Profil 2" side={b} onChange={setB} />
+        <ProfileInput accent="blue" label="Profil 2" side={b} onChange={editB} />
       </div>
 
       {error && (

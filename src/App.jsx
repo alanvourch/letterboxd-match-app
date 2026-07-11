@@ -117,6 +117,7 @@ export default function App() {
             onCompare={handleCompare}
             loading={loading}
             error={error}
+            onEdit={() => setError(null)}
             initial={initial}
           />
         )}
