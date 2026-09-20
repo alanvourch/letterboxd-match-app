@@ -121,7 +121,7 @@ export default function App() {
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-4 text-center text-xs text-faint">
           <p>
             Projet indépendant, non affilié à Letterboxd. Seules les pages publiques
-            des profils sont lues — aucune donnée personnelle n'est conservée.
+            des profils sont lues, aucune donnée personnelle n'est conservée.
           </p>
           <p className="flex items-center justify-center gap-2">
             <svg

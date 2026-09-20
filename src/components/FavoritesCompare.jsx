@@ -16,7 +16,7 @@ export default function FavoritesCompare({ favorites, nameA, nameB, enrichMap })
       subtitle={
         favorites.shared.length > 0 ? (
           <>
-            Les 4 films épinglés sur chaque profil —{' '}
+            Les 4 films épinglés sur chaque profil,{' '}
             <span className="font-semibold text-orange">
               {favorites.shared.length} favori{favorites.shared.length > 1 ? 's' : ''} en
               commun !

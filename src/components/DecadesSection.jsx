@@ -49,7 +49,7 @@ export default function DecadesSection({ decades, nameA, nameB }) {
           <div key={r.decade} className="flex-1">
             <div
               className="flex h-28 items-end justify-center gap-[2px]"
-              title={`${decadeLabel(r.decade)} — ${nameA} : ${pct(r.a)} · ${nameB} : ${pct(r.b)}`}
+              title={`${decadeLabel(r.decade)} : ${nameA} ${pct(r.a)} · ${nameB} ${pct(r.b)}`}
             >
               <div className="relative w-full max-w-[18px]">
                 {r.decade === topA.decade && (
@@ -86,8 +86,8 @@ export default function DecadesSection({ decades, nameA, nameB }) {
           Votre meilleure décennie à deux :{' '}
           <span className="font-display italic text-ink">
             les {decadeLabel(bestTogether.decade)}
-          </span>{' '}
-          — {bestTogether.count} films co-notés à{' '}
+          </span>
+          , {bestTogether.count} films co-notés à{' '}
           <span className="tabular-nums text-ink">{ratingText(bestTogether.mean)}</span>
           <span className="text-orange">★</span> de moyenne.
         </p>

@@ -1,19 +1,19 @@
 // Helpers de présentation (formatage notes, pourcentages, étoiles).
 
 export function pct(value) {
-  if (value == null || Number.isNaN(value)) return '—'
+  if (value == null || Number.isNaN(value)) return '-'
   return Math.round(value * 100) + '%'
 }
 
 export function stars(rating) {
-  if (rating == null) return '—'
+  if (rating == null) return '-'
   const full = Math.floor(rating)
   const half = rating - full >= 0.5
   return '★'.repeat(full) + (half ? '½' : '')
 }
 
 export function ratingText(rating) {
-  if (rating == null) return '—'
+  if (rating == null) return '-'
   return rating.toFixed(rating % 1 === 0 ? 0 : 1)
 }
 
@@ -47,6 +47,6 @@ export const toneClasses = {
 
 // Libellé d'une décennie : 1990 -> "années 90", 2000 -> "années 2000".
 export function decadeLabel(decade) {
-  if (decade == null) return '—'
+  if (decade == null) return '-'
   return decade < 2000 ? `années ${String(decade).slice(2)}` : `années ${decade}`
 }

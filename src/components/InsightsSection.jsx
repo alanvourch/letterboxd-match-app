@@ -47,7 +47,7 @@ function PeopleRow({ people }) {
           )}
           <p
             className="mt-2 truncate text-xs font-semibold text-ink"
-            title={`${p.name} — ${p.films.join(', ')}`}
+            title={`${p.name} : ${p.films.join(', ')}`}
           >
             {p.name}
           </p>
@@ -99,7 +99,7 @@ export default function InsightsSection({
       emoji: GENRE_EMOJI[genres.signature.id] || '🎬',
       eyebrow: 'Votre genre signature',
       name: genres.signature.name,
-      detail: `${genres.signature.coLoved} films de ce genre adorés par vous deux — c'est votre terrain de jeu.`,
+      detail: `${genres.signature.coLoved} films de ce genre adorés par vous deux, c'est votre terrain de jeu.`,
       accent: 'border-orange/40',
     })
   }

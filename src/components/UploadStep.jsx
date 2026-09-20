@@ -268,7 +268,7 @@ export default function UploadStep({ onCompare, loading, error, onEdit, initial 
         </button>
         <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-faint">
           Les deux profils doivent être publics. On lit les films, notes et likes de
-          chacun — rien n'est conservé.
+          chacun, rien n'est conservé.
         </p>
       </div>
     </div>

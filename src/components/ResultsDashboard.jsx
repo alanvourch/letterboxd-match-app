@@ -61,7 +61,7 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
           info="Le nombre de films que vous avez vus tous les deux."
         />
         <StatCard
-          value={taste.score == null ? '—' : `${taste.score}`}
+          value={taste.score == null ? '-' : `${taste.score}`}
           label="Accord de notes"
           hint={
             taste.agreement != null ? (
@@ -96,7 +96,7 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
         <StatCard
           value={
             taste.ratingBias == null
-              ? '—'
+              ? '-'
               : Math.abs(taste.ratingBias) < 0.1
                 ? '≈'
                 : `${taste.ratingBias > 0 ? '+' : '−'}${Math.abs(taste.ratingBias).toFixed(1)}★`
@@ -184,7 +184,7 @@ export default function ResultsDashboard({ result, enrichMap, enriching, shareUr
       <TopFlopCompare
         eyebrow="Sans pitié"
         title="Les flops de chacun"
-        subtitle="Films notés 2.5★ ou moins — les navets assumés."
+        subtitle="Films notés 2.5★ ou moins, les navets assumés."
         a={flop.a}
         b={flop.b}
         nameA={nameA}

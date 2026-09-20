@@ -72,7 +72,7 @@ export default function FilmList({ rows, renderMeta, enrichMap, emptyText = 'Rie
 }
 
 export function Rating({ value }) {
-  if (value == null) return <span className="text-faint">—</span>
+  if (value == null) return <span className="text-faint">-</span>
   return (
     <span className="tabular-nums text-ink">
       {ratingText(value)}
