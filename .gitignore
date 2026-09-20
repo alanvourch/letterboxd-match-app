@@ -13,4 +13,12 @@ dist
 letterboxd-*/
 *.zip
 
+# Outillage/config assistants IA (usage local, pas destiné au repo public)
+CLAUDE.md
+AGENTS.md
+.claude/
+.codex/
+.cursor/
+.windsurfrules
+
 .vercel
